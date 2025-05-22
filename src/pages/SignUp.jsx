@@ -200,6 +200,7 @@ import { Link } from "react-router-dom";
 import Button from "../components/Button";
 import ShowPassword from "../components/ShowPassword";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import Spinner from "../components/Spinner";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
@@ -208,7 +209,7 @@ export default function Signup() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { signup, isAuthenticated } = useAuth();
+  const { signup, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -248,7 +249,7 @@ export default function Signup() {
       <PageNav />
       <form className={styles.form} onSubmit={handleSubmit}>
         <div className={styles.row}>
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email">User name</label>
           <input
             type="text"
             id="email"
@@ -256,6 +257,7 @@ export default function Signup() {
             value={email}
             disabled={isLoading}
             required
+            placeholder="Use dummy data..."
           />
         </div>
 
@@ -285,6 +287,7 @@ export default function Signup() {
               id="password"
               onChange={(e) => setPassword(e.target.value)}
               value={password}
+              placeholder="Use dummy password of 6 characters ..."
             />
             <button
               type="button"
@@ -296,12 +299,20 @@ export default function Signup() {
           </div>
         </div>
 
-        {error && <p className={styles.error}>{error}</p>}
-
         <div>
-          <Button type="primary" disabled={isLoading}>
-            {isLoading ? "Creating account..." : "Sign up"}
-          </Button>
+          {loading ? (
+            <div>
+              <Spinner />
+              <p className={styles.loginLoading}>
+                Signing up... might take up to 50 seconds.
+              </p>
+            </div>
+          ) : (
+            <>
+              <Button type="primary">Sign up</Button>
+              {error && <p className={styles.error}> {error}</p>}
+            </>
+          )}
         </div>
 
         <div className={styles.footer}>

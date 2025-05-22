@@ -23,7 +23,7 @@ function reducer(state, action) {
       throw new Error("Unknown action");
   }
 }
-const URL = "http://localhost:8000";
+const URL = "https://cities-json-server-api.onrender.com";
 
 function AuthProvider({ children }) {
   const [{ user, isAuthenticated }, dispatch] = useReducer(
@@ -31,8 +31,10 @@ function AuthProvider({ children }) {
     initialState
   );
   const [error, setError] = useState(null); // State to store error messages
+  const [loading, setLoading] = useState(false);
 
   async function login(email, password) {
+    setLoading(true);
     try {
       const res = await fetch(`${URL}/users`);
       if (!res.ok) throw new Error("Failed to fetch users");
@@ -61,6 +63,8 @@ function AuthProvider({ children }) {
     } catch (err) {
       setError("An error occurred during login");
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -70,6 +74,7 @@ function AuthProvider({ children }) {
 
   async function signup(email, password) {
     try {
+      setLoading(true);
       // Check if user already exists
       const res = await fetch(`${URL}/users`);
       if (!res.ok) throw new Error("Failed to fetch users");
@@ -131,12 +136,14 @@ function AuthProvider({ children }) {
     } catch (err) {
       console.error("Signup error:", err);
       return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated, login, logout, error, signup }}
+      value={{ user, isAuthenticated, login, logout, error, signup, loading }}
     >
       {children}
       {/* {error && <p style={{ color: "red" }}>{error}</p>} */}

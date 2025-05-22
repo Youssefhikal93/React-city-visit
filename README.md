@@ -27,4 +27,4 @@ A modern travel tracking application with city management, interactive map, and 
 
 📅 Date-fns (Date handling)
 
-### <Happy Traveling> ! ✈️ 🌍/>
+### < Happy Traveling ! ✈️ 🌍/>

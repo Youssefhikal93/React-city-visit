@@ -190,7 +190,7 @@ import {
 } from "react";
 import { useAuth } from "../context/FakeAuthContext";
 
-const URL = "http://localhost:8000";
+const URL = "https://cities-json-server-api.onrender.com";
 const CitiesContext = createContext();
 
 const initialState = {

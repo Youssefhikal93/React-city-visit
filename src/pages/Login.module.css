@@ -98,3 +98,27 @@
     font-size: 1.2rem;
   }
 }
+.loginLoading {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--color-brand--2);
+  text-align: center;
+  margin-top: 2rem;
+  animation: pulse 2s infinite ease-in-out;
+}
+
+/* Optional: smooth pulse animation */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

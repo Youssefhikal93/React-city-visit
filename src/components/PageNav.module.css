@@ -20,7 +20,6 @@
   font-weight: 600;
 }
 
-/* CSS Modules feature */
 .nav a:global(.active) {
   color: var(--color-brand--2);
 }
@@ -49,3 +48,107 @@ a.ctaLink:visited {
     font-size: 1.1rem;
   }
 }
+/* .nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 3rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+ul {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+}
+
+a:link,
+a:visited {
+  text-decoration: none;
+  color: var(--color-light--2);
+  text-transform: uppercase;
+  font-size: 1.5rem;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+a:hover {
+  color: var(--color-brand--1);
+}
+
+:global(.active) {
+  color: var(--color-brand--2);
+}
+
+:global(.ctaLink):link,
+:global(.ctaLink):visited {
+  background-color: var(--color-brand--2);
+  color: var(--color-dark--0);
+  padding: 0.8rem 2rem;
+  border-radius: 7px;
+}
+
+:global(.ctaLink):hover {
+  background-color: var(--color-brand--1);
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+}
+
+.loginBtn:link,
+.loginBtn:visited {
+  background-color: var(--color-brand--2); 
+  color: var(--color-light--0);
+  padding: 1rem;
+  border-radius: 1rem;
+  font-weight: bold;
+}
+.loginBtn:hover {
+  background-color: var(--color-brand--1);
+}
+
+@media (max-width: 900px) {
+  .nav {
+    padding: 1rem 2rem;
+  }
+
+  ul {
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .nav > * {
+    flex: 0 1 auto;
+  }
+
+  ul {
+    width: 100%;
+    order: 3;
+    margin-top: 1rem;
+    justify-content: space-around;
+    gap: 0.5rem;
+  }
+
+  a:link,
+  a:visited {
+    font-size: 1.1rem;
+    padding: 0.5rem;
+  }
+
+  :global(.ctaLink):link,
+  :global(.ctaLink):visited {
+    padding: 0.5rem 1rem;
+    font-size: 1.1rem;
+  }
+} 
+*/
