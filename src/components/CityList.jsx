@@ -32,7 +32,7 @@ import { useCities } from "../context/CitiesContext";
 import { useEffect } from "react";
 
 function CityList() {
-  const { cities, isLoading, error, clearError } = useCities();
+  const { cities, isLoading, error } = useCities();
 
   if (isLoading) return <Spinner />;
   if (error) return <Message message={error} />;

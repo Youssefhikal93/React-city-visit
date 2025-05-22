@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import styles from "./AppNav.module.css";
-import { useCities } from "../context/citiesContext";
+import { useCities } from "../context/CitiesContext";
 
 function AppNav() {
   const { clearError } = useCities();

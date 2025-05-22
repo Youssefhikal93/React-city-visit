@@ -86,7 +86,7 @@
 // export default City;
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./City.module.css";
-import { useCities } from "../context/citiesContext";
+import { useCities } from "../context/CitiesContext";
 import { useEffect, useRef, useState } from "react";
 import Button from "./Button";
 import Spinner from "./Spinner";
