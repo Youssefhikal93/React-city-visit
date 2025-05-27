@@ -1,16 +1,20 @@
-import styles from "./Sidebar.module.css";
 import Logo from "./Logo";
 import AppNav from "./AppNav";
-import Footer from "./Footer";
 import { Outlet } from "react-router-dom";
+
 function SideBar() {
   return (
-    <div className={styles.sidebar}>
-      <Logo />
-      <AppNav />
-      <Outlet />
-      <Footer />
-    </div>
+    <aside className="flex flex-col h-full w-screen min-w-[16rem] bg-gradient-to-b from-dark-1 via-dark-1/98 to-dark-1/95 backdrop-blur-sm border-r border-dark-2/30 p-2 sm:p-2 overflow-y-auto shadow-2xl relative rounded-lg md:h-screen sm:max-w-full sm:min-w-0 w-screen sm:border-r-0 sm:border-b sm:rounded-b-lg">
+      {/* Top: Logo and Nav always at the top */}
+      <div className="w-full flex flex-col items-center gap-2 mb-2">
+        <Logo className="" />
+        <AppNav />
+      </div>
+      {/* Main content area */}
+      <div className="flex-1 w-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-dark-2 scrollbar-track-transparent hover:scrollbar-thumb-brand-2/50 transition-colors">
+        <Outlet />
+      </div>
+    </aside>
   );
 }
 

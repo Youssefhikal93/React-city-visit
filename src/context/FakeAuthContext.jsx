@@ -23,7 +23,8 @@ function reducer(state, action) {
       throw new Error("Unknown action");
   }
 }
-const URL = "https://cities-json-server-api.onrender.com";
+// const URL = "https://cities-json-server-api.onrender.com";
+const URL = "http://localhost:8000";
 
 function AuthProvider({ children }) {
   const [{ user, isAuthenticated }, dispatch] = useReducer(

@@ -1,9 +1,17 @@
 /* Taken from getting started guide at: https://leafletjs.com/examples/quick-start/ */
 @import "https://unpkg.com/leaflet@1.9.3/dist/leaflet.css";
 @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap";
+/* @import "tailwindcss"; */
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
 /* These CSS variables are global, so they are available in all CSS modules */
-:root {
+/* :root {
   --color-brand--1: #ffb545;
   --color-brand--2: #00c46a;
 
@@ -66,7 +74,7 @@ input:focus {
   font-weight: 600;
   padding: 1rem 3rem;
   border-radius: 5px;
-}
+} */
 
 /*
 "importCSSModule": {
@@ -77,7 +85,7 @@ input:focus {
   },
 */
 
-@media (max-width: 600px) {
+/* @media (max-width: 600px) {
   html {
     font-size: 55%;
   }
@@ -85,4 +93,49 @@ input:focus {
     padding: 0.5rem;
     overflow-x: hidden;
   }
+} */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #00c46a #2d3439; /* brand-2 dark-1 */
+}
+
+/* Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #2d3439; /* dark-1 */
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #00c46a; /* brand-2 */
+  border-radius: 4px;
+  border: 1px solid #2d3439; /* dark-1 */
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #00a858; /* darker brand-2 */
+}
+
+/* Optional: Smooth scrolling for the entire app */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Optional: Custom scrollbar for specific containers */
+.scrollbar-custom::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background-color: #ffb545; /* brand-1 */
+}
+
+/* For Firefox */
+.scrollbar-custom {
+  scrollbar-width: thin;
+  scrollbar-color: #ffb545 #42484d; /* brand-1 dark-2 */
 }

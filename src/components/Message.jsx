@@ -1,8 +1,6 @@
-import styles from "./Message.module.css";
-
 function Message({ message }) {
   return (
-    <p className={styles.message}>
+    <p className="text-center text-xl w-4/5 my-8 mx-auto font-semibold">
       <span role="img">👋</span> {message}
     </p>
   );
