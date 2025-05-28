@@ -1,36 +1,3 @@
-// import PageNav from "../components/PageNav";
-
-// export default function Product() {
-//   return (
-//     <main className="min-h-[calc(100vh-6rem)] p-8 md:p-12 bg-dark-1 flex flex-col">
-//       <PageNav />
-//       <section className="w-full max-w-[120rem] mx-auto my-16 px-4 grid grid-cols-1 md:grid-cols-2 gap-12 items-center flex-grow">
-//         <img
-//           src="img-1.jpg"
-//           alt="person with dog overlooking mountain with sunset"
-//           className="w-full h-auto rounded-lg shadow-lg"
-//         />
-//         <div>
-//           <h2 className="text-4xl md:text-5xl font-bold mb-8 text-brand-2 leading-tight">
-//             About WorldWide.
-//           </h2>
-//           <p className="text-lg md:text-xl mb-8 leading-relaxed">
-//             Lorem ipsum dolor sit amet consectetur adipisicing elit. Illo est
-//             dicta illum vero culpa cum quaerat architecto sapiente eius non
-//             soluta, molestiae nihil laborum, placeat debitis, laboriosam at fuga
-//             perspiciatis?
-//           </p>
-//           <p className="text-lg md:text-xl mb-8 leading-relaxed">
-//             Lorem, ipsum dolor sit amet consectetur adipisicing elit. Corporis
-//             doloribus libero sunt expedita ratione iusto, magni, id sapiente
-//             sequi officiis et.
-//           </p>
-//         </div>
-//       </section>
-//     </main>
-//   );
-// }
-
 import PageNav from "../components/PageNav";
 
 export default function Product() {
@@ -58,14 +25,16 @@ export default function Product() {
               <div>
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-light-1 leading-tight mb-4">
                   About{" "}
-                  <span className="text-brand-2 drop-shadow-lg">WorldWise</span>
+                  <span className="text-brand-2 drop-shadow-lg">
+                    Worldvisit
+                  </span>
                 </h2>
                 <div className="w-20 h-1 bg-brand-2 rounded-full"></div>
               </div>
 
               <div className="space-y-4 lg:space-y-6">
                 <p className="text-base sm:text-lg lg:text-xl text-light-2 leading-relaxed">
-                  WorldWise is your ultimate travel companion, designed to help
+                  Worldvisit is your ultimate travel companion, designed to help
                   you document and share your incredible journeys around the
                   globe. Our interactive world map lets you mark every
                   destination you've visited, creating a visual story of your
@@ -74,8 +43,8 @@ export default function Product() {
 
                 <p className="text-base sm:text-lg lg:text-xl text-light-2 leading-relaxed">
                   Whether you're a seasoned globetrotter or just starting your
-                  travel journey, WorldWise makes it easy to keep track of where
-                  you've been and inspire where you'll go next.
+                  travel journey, Worldvisit makes it easy to keep track of
+                  where you've been and inspire where you'll go next.
                 </p>
               </div>
 

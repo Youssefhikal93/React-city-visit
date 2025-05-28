@@ -35,7 +35,7 @@
 // //         <h1 className="text-5xl md:text-7xl font-bold leading-tight text-brand-1">
 // //           You travel the world.
 // //           <br />
-// //           WorldWise keeps track of your adventures.
+// //           Worldvisit keeps track of your adventures.
 // //         </h1>
 // //         <h2 className="w-[90%] text-xl md:text-3xl text-light-1 mb-10">
 // //           A world map that tracks your footsteps into every city you can think
@@ -65,7 +65,7 @@
 //             <h1 className="text-4xl md:text-6xl font-bold text-light-1 leading-tight">
 //               You travel the world.
 //               <br />
-//               <span className="text-brand-2">WorldWise</span> keeps track.
+//               <span className="text-brand-2">Worldvisit</span> keeps track.
 //             </h1>
 //             <h2 className="text-lg md:text-xl text-light-2 leading-relaxed">
 //               Track your adventures with our interactive world map. Never forget
@@ -99,7 +99,7 @@ export default function Homepage() {
               You travel the world.
               <br />
               <span className="text-brand-2 drop-shadow-lg">
-                WorldWise
+                Worldvisit
               </span>{" "}
               keeps track of your adventures.
             </h1>

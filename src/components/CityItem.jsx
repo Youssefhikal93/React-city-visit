@@ -55,7 +55,7 @@ function CityItem({ city }) {
         {/* Delete button */}
         <button
           onClick={handleDelete}
-          className="w-8 h-8 p-1flex items-center justify-center rounded-full border border-dark-2/60 bg-dark-1 text-light-2 text-xl font-bold cursor-pointer shadow-sm hover:bg-red-500/80 hover:text-white focus:bg-red-500/90 transition-all duration-200 ml-2 outline-none"
+          className="w-6 h-6 flex items-center justify-center rounded-full border border-dark-2/60 bg-dark-1 text-light-2 text-sm font-bold cursor-pointer shadow-sm hover:bg-red-500/80 hover:text-white focus:bg-red-500/90 transition-all duration-200 ml-2 outline-none"
           title="Delete city"
           aria-label="Delete city"
         >

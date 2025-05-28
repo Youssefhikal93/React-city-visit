@@ -50,7 +50,7 @@ export default function Pricing() {
               </div>
 
               <p className="text-base sm:text-lg lg:text-xl text-light-2 leading-relaxed">
-                Get unlimited access to all WorldWise features for just $9 per
+                Get unlimited access to all Worldvisit features for just $9 per
                 month. No hidden fees, no complicated tiers - just one simple
                 price for everything you need to track your travel adventures.
               </p>
@@ -215,7 +215,7 @@ export default function Pricing() {
               <span className="text-light-2 font-semibold">4.9/5</span>
             </div>
             <p className="text-light-2 text-sm md:text-base italic">
-              "WorldWise has completely transformed how I document my travels.
+              "Worldvisit has completely transformed how I document my travels.
               The interactive map is amazing and the price is unbeatable!"
             </p>
             <p className="text-light-0 text-sm mt-2">- Sarah, Digital Nomad</p>

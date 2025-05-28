@@ -489,7 +489,7 @@ export default function Signup() {
             {/* Sign Up Benefits */}
             <div className="mt-6 p-4 bg-dark-1/50 rounded-lg border border-dark-1">
               <p className="text-xs md:text-sm text-brand-1 font-semibold text-center mb-2">
-                Join WorldWise today!
+                Join Worldvisit today!
               </p>
               <ul className="text-xs text-light-2 space-y-1">
                 <li>✓ Track your travel adventures</li>

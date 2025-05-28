@@ -50,7 +50,8 @@ function CountriesList() {
       {countries.length > 0 && (
         <div className="mt-2 px-2 py-2 bg-dark-2/50 rounded-lg backdrop-blur-sm">
           <p className="text-xs text-light-1/70 text-center">
-            Visited {countries.length}{" "}
+            Exploring {countries.length}
+            {" and more to come ✈️"}
             {countries.length === 1 ? "country" : "countries"}
             <span className="text-brand-2"> ✨</span>
           </p>

@@ -5,7 +5,7 @@
 //     <Link to="/">
 //       <img
 //         src="/logo2.png"
-//         alt="WorldWise logo"
+//         alt="Worldvisit logo"
 //         className="h-20 md:h-14 object-contain"
 //       />
 //     </Link>
@@ -18,7 +18,7 @@
 //     <Link to="/">
 //       <img
 //         src="/logo2.png"
-//         alt="WorldWise logo"
+//         alt="Worldvisit logo"
 //         className="h-20 md:h-14 object-contain"
 //       />
 //     </Link>
@@ -32,8 +32,8 @@ function Logo() {
     <Link to="/" className="transition-transform duration-300 hover:scale-105">
       <img
         src="/logo2.png"
-        alt="WorldWise logo"
-        className="h-10 md:h-12 object-contain drop-shadow-lg"
+        alt="Worldvisit logo"
+        className="h-10 md:h-12 object-contain drop-shadow-lg pt-1 mt-1"
       />
     </Link>
   );

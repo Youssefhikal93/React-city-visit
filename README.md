@@ -1,4 +1,4 @@
-# 🌍✈️ WorldWise - Travel Tracking App
+# 🌍✈️ WorldVisit - Travel Tracking App
 
 A modern travel tracking application with city management, interactive map, and travel journal.
 
