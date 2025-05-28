@@ -25,9 +25,9 @@ function CountriesList() {
   }, []);
 
   return (
-    <div className="w-full h-full flex flex-col gap-2 font-manrope">
-      {/* Header - unchanged */}
-      <div className="flex items-center justify-between px-2 pt-1 pb-0">
+    <>
+      {/* Header - matches CityList structure */}
+      <div className="flex items-center justify-between px-2 pt-1 pb-0 mb-2">
         <h2 className="text-sm font-bold text-light-2 flex items-center gap-2">
           <span className="text-brand-1 text-base">🌍</span>
           Countries
@@ -37,8 +37,8 @@ function CountriesList() {
         </h2>
       </div>
 
-      {/* Countries Grid - fixed height */}
-      <div className="flex-1 overflow-y-auto bg-dark-2 rounded-lg p-2 scrollbar-custom">
+      {/* Countries Grid - fixed height like CityList */}
+      <div className="w-full h-[60vh] overflow-y-auto bg-dark-2 rounded-lg p-2 scrollbar-custom">
         <ul className="w-full grid grid-cols-1 md:grid-cols-2 gap-2 p-0 list-none">
           {countries.map((country) => (
             <CountryItem country={country} key={country.emoji} />
@@ -46,18 +46,18 @@ function CountriesList() {
         </ul>
       </div>
 
-      {/* Footer - unchanged */}
+      {/* Footer - outside scrollable area */}
       {countries.length > 0 && (
         <div className="mt-2 px-2 py-2 bg-dark-2/50 rounded-lg backdrop-blur-sm">
           <p className="text-xs text-light-1/70 text-center">
-            Exploring {countries.length}
-            {" and more to come ✈️"}
+            Exploring {countries.length}{" "}
             {countries.length === 1 ? "country" : "countries"}
+            {" and more to come ✈️"}
             <span className="text-brand-2"> ✨</span>
           </p>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

@@ -11,7 +11,7 @@ function SideBar() {
         <AppNav />
       </div>
       {/* Main content area */}
-      <div className="flex-1 w-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-dark-2 scrollbar-track-transparent hover:scrollbar-thumb-brand-2/50 transition-colors">
+      <div className="flex-1 w-full">
         <Outlet />
       </div>
     </aside>
