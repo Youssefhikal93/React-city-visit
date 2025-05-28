@@ -24,8 +24,8 @@ function CityList() {
           </span>
         </h2>
       </div>
-      <div className="w-full h-90 overflow-y-auto flex flex-col gap-3 list-none bg-dark-2 rounded-lg p-2 scrollbar-custom">
-        <ul className=" ">
+      <div className="w-full h-[70vh] overflow-y-auto flex flex-col gap-3 list-none bg-dark-2 rounded-lg p-2 scrollbar">
+        <ul className="">
           {cities.map((city) => (
             <CityItem city={city} key={city.id} />
           ))}
