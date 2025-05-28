@@ -42,6 +42,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/FakeAuthContext";
 import { useEffect } from "react";
+import PageNotFound from "../pages/PageNotFound";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth(); // Fixed: Added parentheses to call the hook
@@ -54,7 +55,7 @@ function ProtectedRoute({ children }) {
     [isAuthenticated, navigate]
   );
 
-  return isAuthenticated ? children : null;
+  return isAuthenticated ? children : <PageNotFound />;
 }
 
 export default ProtectedRoute;

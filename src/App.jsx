@@ -31,29 +31,30 @@ function App() {
     <AuthProvider>
       <CitiesProvider>
         <BrowserRouter>
-          <Suspense fallback={<SpinnerFullPage />} />
-          <Routes>
-            <Route path="/" element={<HomePage />}></Route>
-            <Route path="product" element={<Product />}></Route>
-            <Route path="pricing" element={<Pricing />}></Route>
-            <Route path="/signup" element={<Signup />} />
-            <Route path="login" element={<Login />}></Route>
-            <Route
-              path="app"
-              element={
-                <ProtectedRoute>
-                  <AppLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate replace to="cities" />} />
-              <Route path="cities" element={<CityList />} />
-              <Route path="countries" element={<CountriesList />} />
-              <Route path="cities/:id" element={<City />} />
-              <Route path="form" element={<Form />} />
-            </Route>
-            <Route path="*" element={<PageNotFound />} />
-          </Routes>
+          <Suspense fallback={<SpinnerFullPage />}>
+            <Routes>
+              <Route path="/" element={<HomePage />}></Route>
+              <Route path="product" element={<Product />}></Route>
+              <Route path="pricing" element={<Pricing />}></Route>
+              <Route path="/signup" element={<Signup />} />
+              <Route path="login" element={<Login />}></Route>
+              <Route
+                path="app"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate replace to="cities" />} />
+                <Route path="cities" element={<CityList />} />
+                <Route path="countries" element={<CountriesList />} />
+                <Route path="cities/:id" element={<City />} />
+                <Route path="form" element={<Form />} />
+              </Route>
+              <Route path="*" element={<PageNotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </CitiesProvider>
     </AuthProvider>

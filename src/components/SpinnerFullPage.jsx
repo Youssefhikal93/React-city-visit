@@ -1,9 +1,8 @@
 import Spinner from "./Spinner";
-import styles from "./SpinnerFullPage.module.css";
 
 function SpinnerFullPage() {
   return (
-    <div className={styles.spinnerFullpage}>
+    <div className="m-10 h-[calc(100vh-5rem)] bg-dark-1 flex items-center justify-center">
       <Spinner />
     </div>
   );
