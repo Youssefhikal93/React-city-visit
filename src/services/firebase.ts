@@ -1,10 +1,10 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, type FirebaseOptions } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 
 // Every value comes from a VITE_ env var so the same build can be pointed at a
 // different Firebase project. See .env.example for the full list.
-const firebaseConfig = {
+const firebaseConfig: FirebaseOptions = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
