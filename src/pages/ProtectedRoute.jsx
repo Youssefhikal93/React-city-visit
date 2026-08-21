@@ -1,61 +1,22 @@
-// // import { useNavigate } from "react-router-dom";
-// // import { useAuth } from "../context/FakeAuthContext";
-// // import { useEffect } from "react";
-
-// // function ProtectedRoute({ children }) {
-// //   const { isAuthenticated } = useAuth;
-// //   const navigate = useNavigate();
-
-// //   useEffect(
-// //     function () {
-// //       if (!isAuthenticated) navigate("/");
-// //     },
-// //     [isAuthenticated, navigate]
-// //   );
-// //   return isAuthenticated ? children : null;
-// // }
-
-// // export default ProtectedRoute;
-
-// import { useNavigate } from "react-router-dom";
-// import { useAuth } from "../context/FakeAuthContext";
-// import { useEffect } from "react";
-
-// function ProtectedRoute({ children }) {
-//   const { isAuthenticated } = useAuth(); // Fixed: Added parentheses to call the hook
-//   const navigate = useNavigate();
-
-//   useEffect(
-//     function () {
-//       if (!isAuthenticated) navigate("/login"); // Changed to navigate to login instead of root
-//     },
-//     [isAuthenticated, navigate]
-//   );
-
-//   return isAuthenticated ? children : null;
-// }
-
-// export default ProtectedRoute;
-
-////////////////////////// claude //////////////
-
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/FakeAuthContext";
 import { useEffect } from "react";
-import PageNotFound from "../pages/PageNotFound";
+import { useNavigate } from "react-router-dom";
+
+import SpinnerFullPage from "../components/SpinnerFullPage";
+import { useAuth } from "../context/AuthContext";
 
 function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuth(); // Fixed: Added parentheses to call the hook
+  const { isAuthenticated, isRestoring } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(
-    function () {
-      if (!isAuthenticated) navigate("/login"); // Changed to navigate to login instead of root
-    },
-    [isAuthenticated, navigate]
-  );
+  useEffect(() => {
+    // Reloading /app directly means the anonymous session is still being
+    // restored; redirecting before that finishes would kick the user out.
+    if (!isRestoring && !isAuthenticated) navigate("/login", { replace: true });
+  }, [isAuthenticated, isRestoring, navigate]);
 
-  return isAuthenticated ? children : <PageNotFound />;
+  if (isRestoring) return <SpinnerFullPage />;
+
+  return isAuthenticated ? children : <SpinnerFullPage />;
 }
 
 export default ProtectedRoute;

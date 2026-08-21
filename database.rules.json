@@ -1,0 +1,47 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "profiles": {
+      "$pin": {
+        ".read": "auth != null && $pin.matches(/^[0-9]{4}$/)",
+        ".write": "auth != null && $pin.matches(/^[0-9]{4}$/)",
+
+        "createdAt": { ".validate": "newData.isNumber()" },
+        "lastLoginAt": { ".validate": "newData.isNumber()" },
+
+        "cities": {
+          "$cityId": {
+            ".validate": "newData.hasChildren(['cityName', 'position'])",
+
+            "cityName": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120"
+            },
+            "country": { ".validate": "newData.isString() && newData.val().length <= 120" },
+            "emoji": { ".validate": "newData.isString() && newData.val().length <= 16" },
+            "date": { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "notes": { ".validate": "newData.isString() && newData.val().length <= 2000" },
+            "image": { ".validate": "newData.isString() && newData.val().length <= 2000000" },
+            "createdAt": { ".validate": "newData.isNumber()" },
+
+            "position": {
+              ".validate": "newData.hasChildren(['lat', 'lng'])",
+              "lat": {
+                ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90"
+              },
+              "lng": {
+                ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180"
+              },
+              "$other": { ".validate": false }
+            },
+
+            "$other": { ".validate": false }
+          }
+        },
+
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

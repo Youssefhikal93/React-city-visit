@@ -7,13 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "server": "json-server --watch data/cities.json --port 8000"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.7",
-    "bcryptjs": "^3.0.2",
-    "json-server": "^1.0.0-beta.3",
+    "firebase": "^12.18.0",
     "leaflet": "^1.9.4",
     "react": "^19.1.0",
     "react-datepicker": "^8.3.0",

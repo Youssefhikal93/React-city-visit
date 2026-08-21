@@ -24,3 +24,12 @@ dist-ssr
 *.sw?
 
 data
+# Local environment (Firebase config)
+.env
+.env.local
+
+# Vite build output
+dist
+
+# Firebase CLI
+.firebase
