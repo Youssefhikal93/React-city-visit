@@ -1,5 +1,5 @@
 function Button({ children, onClick, type }) {
-  let base =
+  const base =
     "uppercase px-4 py-2 font-manrope text-base rounded cursor-pointer border-none ";
   let variant = "";
   if (type === "primary") {
