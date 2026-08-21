@@ -16,7 +16,7 @@ A modern travel tracking application with city management, interactive map, and 
 
 ## 🛠️ Technologies Used
 
-⚛️ React.js (Vite)
+⚛️ React.js + TypeScript (Vite)
 
 🔥 Firebase (Realtime Database + Anonymous Auth)
 
@@ -80,6 +80,25 @@ profiles/
         createdAt
 ```
 
+### TypeScript
+
+The whole `src` tree is TypeScript in `strict` mode, with `allowJs` off.
+`src/types.ts` is the one place a city is described:
+
+| Type | Used for |
+| --- | --- |
+| `City` | what the UI reads, id included |
+| `NewCity` | what the form submits, before an id exists |
+| `CityUpdate` | a partial edit; `image: null` clears the snapshot |
+| `StoredCity` | the shape actually sitting in the database |
+| `Country` | a country rolled up from the city list |
+
+```bash
+npm run typecheck   # tsc --noEmit
+npm run lint
+npm run build       # typechecks, then builds
+```
+
 `database.rules.json` denies everything by default, then allows an
 authenticated session to read and write a 4-digit profile, validates every city
 field's type and length, and range-checks coordinates.
@@ -92,8 +111,8 @@ files and nothing else:
 
 | File | Responsibility |
 | --- | --- |
-| `services/firebase.js` | App init from env vars, `auth` and `db` handles |
-| `services/profiles.js` | PIN validation, profile create / exists / touch |
-| `services/cities.js` | City subscribe, fetch, create, update, delete |
+| `services/firebase.ts` | App init from env vars, `auth` and `db` handles |
+| `services/profiles.ts` | PIN validation, profile create / exists / touch |
+| `services/cities.ts` | City subscribe, fetch, create, update, delete |
 
 ### < Happy Traveling ! ✈️ 🌍/>

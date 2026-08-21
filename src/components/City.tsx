@@ -362,33 +362,108 @@
 // export default City;
 import { useNavigate, useParams } from "react-router-dom";
 import { useCities } from "../context/CitiesContext";
-import { useEffect, useRef, useState } from "react";
-import Button from "./Button";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import Spinner from "./Spinner";
 
-const formatDate = (date) =>
+const formatDate = (date: string | null) =>
   new window.Intl.DateTimeFormat("en", {
     day: "numeric",
     month: "long",
     year: "numeric",
     weekday: "long",
-  }).format(new Date(date));
+  }).format(new Date(date ?? Date.now()));
+
+interface ResizeOptions {
+  maxWidth: number;
+  maxHeight: number;
+  quality: number;
+  fileType: string;
+}
+
+/**
+ * Shrinks a picked image through a canvas, so the base64 written to the
+ * database stays well under the size the rules allow.
+ */
+function resizeImage(file: File, options: ResizeOptions): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => reject(new Error("Could not read that image."));
+    reader.onload = (event) => {
+      const source = event.target?.result;
+      if (typeof source !== "string") {
+        reject(new Error("Could not read that image."));
+        return;
+      }
+
+      const img = new Image();
+      img.onerror = () => reject(new Error("That file is not an image."));
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > options.maxWidth) {
+          height *= options.maxWidth / width;
+          width = options.maxWidth;
+        }
+        if (height > options.maxHeight) {
+          width *= options.maxHeight / height;
+          height = options.maxHeight;
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Canvas is unavailable in this browser."));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) =>
+            blob ? resolve(blob) : reject(new Error("Could not encode image.")),
+          options.fileType,
+          options.quality
+        );
+      };
+
+      img.src = source;
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+function convertToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") resolve(reader.result);
+      else reject(new Error("Could not encode image."));
+    };
+    reader.onerror = () => reject(new Error("Could not encode image."));
+    reader.readAsDataURL(blob);
+  });
+}
 
 function City() {
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentCity, getCity, isLoading, updateCity } = useCities();
 
   useEffect(() => {
-    getCity(id);
+    if (id) getCity(id);
   }, [id, getCity]);
 
-  async function handleImageUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+  async function handleImageUpload(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !id) return;
 
     const MAX_SIZE = 5 * 1024 * 1024; // 5MB
     if (file.size > MAX_SIZE) {
@@ -416,54 +491,8 @@ function City() {
     }
   }
 
-  function resizeImage(file, options) {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          let width = img.width;
-          let height = img.height;
-
-          if (width > options.maxWidth) {
-            height *= options.maxWidth / width;
-            width = options.maxWidth;
-          }
-          if (height > options.maxHeight) {
-            width *= options.maxHeight / height;
-            height = options.maxHeight;
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, width, height);
-
-          canvas.toBlob(
-            (blob) => resolve(blob),
-            options.fileType,
-            options.quality
-          );
-        };
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function convertToBase64(blob) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  }
-
   async function handleDeleteImage() {
+    if (!id) return;
     if (!window.confirm("Are you sure you want to delete this image?")) return;
 
     try {
@@ -476,9 +505,7 @@ function City() {
 
   if (isLoading) return <Spinner />;
 
-  if (!currentCity || Object.keys(currentCity).length === 0) {
-    return <Spinner />;
-  }
+  if (!currentCity) return <Spinner />;
 
   const { cityName, emoji, date, notes, image } = currentCity;
 
@@ -517,8 +544,12 @@ function City() {
                     alt={`Flag of ${emoji.toUpperCase()}`}
                     className="w-8 h-6 sm:w-10 sm:h-8 object-cover rounded shadow-sm"
                     onError={(e) => {
-                      e.target.style.display = "none";
-                      e.target.nextSibling.style.display = "inline";
+                      // Fall back to the emoji span right after the flag image.
+                      const image = e.currentTarget;
+                      image.style.display = "none";
+                      const fallback = image.nextElementSibling;
+                      if (fallback instanceof HTMLElement)
+                        fallback.style.display = "inline";
                     }}
                   />
                   <span className="text-2xl sm:text-3xl hidden">{emoji}</span>
@@ -543,7 +574,7 @@ function City() {
                 You went to {cityName} on
               </h6>
               <p className="text-base sm:text-lg md:text-xl text-light-2 font-medium">
-                {formatDate(date || new Date())}
+                {formatDate(date)}
               </p>
             </div>
           </div>
@@ -601,7 +632,7 @@ function City() {
                 {/* Image Controls */}
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <button
-                    onClick={() => fileInputRef.current.click()}
+                    onClick={() => fileInputRef.current?.click()}
                     className="flex-1 bg-gradient-to-r from-brand-2 to-brand-2/90 
                              text-dark-0 px-6 py-3 rounded-xl font-bold 
                              uppercase transition-all duration-300 
@@ -638,7 +669,7 @@ function City() {
                     No memory uploaded yet. Add a photo to remember this moment!
                   </p>
                   <button
-                    onClick={() => fileInputRef.current.click()}
+                    onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
                     className="bg-gradient-to-r from-brand-2 to-brand-1 
                              text-dark-0 px-8 py-4 rounded-xl font-bold 
@@ -706,7 +737,6 @@ function City() {
           {/* Back Button */}
           <div className="p-4">
             <button
-              type=""
               onClick={() => navigate(-1)}
               className="bg-dark-1 hover:bg-brand-2 text-light-2 hover:text-dark-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 border border-brand-1/60 hover:border-brand-2 shadow-md"
             >

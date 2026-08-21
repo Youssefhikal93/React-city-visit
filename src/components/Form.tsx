@@ -1,6 +1,5 @@
 // export default Form;
-import { useEffect, useState } from "react";
-import Button from "./Button";
+import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useURLPosition } from "../hooks/useURLPosition";
 import Message from "../components/Message";
@@ -9,7 +8,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useCities } from "../context/CitiesContext";
 
-export function convertToEmoji(countryCode) {
+export function convertToEmoji(countryCode: string) {
   return (
     <img
       src={`https://flagcdn.com/24x18/${countryCode.toLowerCase()}.png`}
@@ -55,7 +54,7 @@ function Form() {
         setCountry(data.countryName);
         setEmoji(data.countryCode.toLowerCase());
       } catch (err) {
-        setError(err.message);
+        setError(err instanceof Error ? err.message : "Could not look up that location.");
       } finally {
         setIsLoadingGeoCoding(false);
       }
@@ -64,9 +63,9 @@ function Form() {
     fetchCityData();
   }, [lat, lng]);
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!cityName || !date) return;
+    if (!cityName || !date || !lat || !lng) return;
 
     const newCity = {
       cityName,
@@ -81,7 +80,7 @@ function Form() {
     if (success) {
       navigate("/app/cities");
     } else {
-      setError(error);
+      setError(error ?? "Could not save that city.");
     }
   }
 
@@ -133,7 +132,7 @@ function Form() {
         </label>
         <DatePicker
           id="date"
-          onChange={setDate}
+          onChange={(next) => next && setDate(next)}
           selected={date}
           dateFormat="dd/MM/yyyy"
           className="w-full p-2 rounded-lg bg-light-2 text-dark-0 text-base border-none focus:outline-none focus:ring-2 focus:ring-brand-2"
