@@ -1,13 +1,24 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ChangeEvent, type KeyboardEvent } from "react";
 
 import { PIN_LENGTH } from "../services/profiles";
+
+interface PinInputProps {
+  /** Digits entered so far, e.g. "12" mid-entry. */
+  value: string;
+  onChange: (value: string) => void;
+  /** Fired once the last digit lands, for auto-submit. */
+  onComplete?: (value: string) => void;
+  disabled?: boolean;
+  autoFocus?: boolean;
+  mask?: boolean;
+  label?: string;
+}
 
 /**
  * Controlled group of single-digit boxes that together spell out the PIN.
  *
- * `value` is always a compact string of the digits entered so far ("12" while
- * mid-entry), so the boxes fill strictly left to right and can never hold a
- * gap in the middle.
+ * `value` is always a compact string, so the boxes fill strictly left to right
+ * and can never hold a gap in the middle.
  */
 function PinInput({
   value,
@@ -17,8 +28,8 @@ function PinInput({
   autoFocus = true,
   mask = true,
   label = "PIN",
-}) {
-  const inputsRef = useRef([]);
+}: PinInputProps) {
+  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (autoFocus) inputsRef.current[0]?.focus();
@@ -29,23 +40,22 @@ function PinInput({
     (_, index) => value[index] ?? ""
   );
 
-  function commit(next, focusAt) {
+  function commit(next: string, focusAt: number) {
     const clamped = next.slice(0, PIN_LENGTH);
     onChange(clamped);
     inputsRef.current[Math.max(0, Math.min(focusAt, PIN_LENGTH - 1))]?.focus();
     if (clamped.length === PIN_LENGTH) onComplete?.(clamped);
   }
 
-  function handleChange(index, raw) {
-    const typed = raw.replace(/\D/g, "");
+  function handleChange(index: number, event: ChangeEvent<HTMLInputElement>) {
+    const typed = event.target.value.replace(/\D/g, "");
     if (!typed) return;
 
     // Overwrite from this box onward, which also makes pasting "1234" work.
-    const next = value.slice(0, index) + typed;
-    commit(next, index + typed.length);
+    commit(value.slice(0, index) + typed, index + typed.length);
   }
 
-  function handleKeyDown(index, event) {
+  function handleKeyDown(index: number, event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Backspace") {
       event.preventDefault();
 
@@ -95,9 +105,9 @@ function PinInput({
           value={digit}
           disabled={disabled}
           aria-label={`${label} digit ${index + 1} of ${PIN_LENGTH}`}
-          onChange={(e) => handleChange(index, e.target.value)}
+          onChange={(e) => handleChange(index, e)}
           onKeyDown={(e) => handleKeyDown(index, e)}
-          onFocus={(e) => e.target.select()}
+          onFocus={(e) => e.currentTarget.select()}
           className="w-14 h-16 md:w-16 md:h-20 text-center text-2xl md:text-3xl font-bold
                      rounded-xl bg-light-2 text-dark-0 caret-brand-2
                      border-2 border-transparent shadow-inner

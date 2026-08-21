@@ -16,7 +16,7 @@ A modern travel tracking application with city management, interactive map, and 
 
 ## 🛠️ Technologies Used
 
-⚛️ React.js (Vite)
+⚛️ React.js + TypeScript (Vite)
 
 🔥 Firebase (Realtime Database + Anonymous Auth)
 
@@ -66,6 +66,24 @@ If you're pointing this at a fresh Firebase project:
    are meant to ship in the client bundle; the rules are what protect the data.
 4. **Deploy the rules** — `firebase deploy --only database`.
 
+### Deploying (Netlify)
+
+`netlify.toml` covers the two things a Vite SPA needs on a static host:
+
+- **A catch-all rewrite to `index.html`.** The app uses `BrowserRouter`, so
+  without it, loading or refreshing `/login` or `/app/cities` directly 404s.
+- **`SECRETS_SCAN_OMIT_KEYS` for the seven `VITE_FIREBASE_*` keys.** Vite inlines
+  every `VITE_*` value into the client bundle at build time, so these are public
+  the moment the page loads — that is by design for Firebase web config, and
+  `database.rules.json` is what actually protects the data. Netlify's secrets
+  scanner assumes any env var is a secret and fails the deploy when it finds one
+  in the output, so the keys are declared as non-secret.
+
+Set the seven variables in the host's build environment (Netlify: Site
+configuration → Environment variables). They are needed at **build** time, not
+runtime — a Vite build with them missing produces a bundle that can't reach
+Firebase, and the login screen will say so.
+
 ### Data shape
 
 ```
@@ -80,6 +98,25 @@ profiles/
         createdAt
 ```
 
+### TypeScript
+
+The whole `src` tree is TypeScript in `strict` mode, with `allowJs` off.
+`src/types.ts` is the one place a city is described:
+
+| Type | Used for |
+| --- | --- |
+| `City` | what the UI reads, id included |
+| `NewCity` | what the form submits, before an id exists |
+| `CityUpdate` | a partial edit; `image: null` clears the snapshot |
+| `StoredCity` | the shape actually sitting in the database |
+| `Country` | a country rolled up from the city list |
+
+```bash
+npm run typecheck   # tsc --noEmit
+npm run lint
+npm run build       # typechecks, then builds
+```
+
 `database.rules.json` denies everything by default, then allows an
 authenticated session to read and write a 4-digit profile, validates every city
 field's type and length, and range-checks coordinates.
@@ -92,8 +129,8 @@ files and nothing else:
 
 | File | Responsibility |
 | --- | --- |
-| `services/firebase.js` | App init from env vars, `auth` and `db` handles |
-| `services/profiles.js` | PIN validation, profile create / exists / touch |
-| `services/cities.js` | City subscribe, fetch, create, update, delete |
+| `services/firebase.ts` | App init from env vars, `auth` and `db` handles |
+| `services/profiles.ts` | PIN validation, profile create / exists / touch |
+| `services/cities.ts` | City subscribe, fetch, create, update, delete |
 
 ### < Happy Traveling ! ✈️ 🌍/>

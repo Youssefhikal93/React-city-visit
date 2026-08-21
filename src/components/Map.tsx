@@ -214,12 +214,13 @@ import {
 import { useEffect, useState } from "react";
 import { useCities } from "../context/CitiesContext";
 import { useGeolocation } from "../hooks/useGeoLocation";
+import type { LatLngTuple } from "leaflet";
 import Button from "./Button";
 import Spinner from "./Spinner";
 import { useURLPosition } from "../hooks/useURLPosition";
 
 function Map() {
-  const [mapPosition, setMapPosition] = useState([40, 0]);
+  const [mapPosition, setMapPosition] = useState<LatLngTuple>([40, 0]);
   const { cities } = useCities();
   const {
     getPosition: getPositionGeoLocation,
@@ -230,7 +231,7 @@ function Map() {
   const [lat, lng] = useURLPosition();
 
   useEffect(() => {
-    if (lat && lng) setMapPosition([lat, lng]);
+    if (lat && lng) setMapPosition([Number(lat), Number(lng)]);
   }, [lat, lng]);
 
   useEffect(() => {
@@ -326,11 +327,11 @@ function Map() {
   );
 }
 
-function ChangeCenter({ position }) {
+function ChangeCenter({ position }: { position: LatLngTuple }) {
   const map = useMap();
 
   useEffect(() => {
-    if (position && position.length === 2) {
+    if (position.length === 2) {
       map.setView(position, map.getZoom(), {
         animate: true,
         duration: 1,

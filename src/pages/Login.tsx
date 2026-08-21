@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import PageNav from "../components/PageNav";
@@ -18,12 +18,12 @@ export default function Login() {
     if (isAuthenticated) navigate("/app", { replace: true });
   }, [isAuthenticated, navigate]);
 
-  function handlePinChange(next) {
+  function handlePinChange(next: string) {
     if (error) clearError();
     setPin(next);
   }
 
-  function handleSubmit(e) {
+  function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     login(pin);
   }

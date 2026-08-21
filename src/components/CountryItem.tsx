@@ -1,5 +1,6 @@
-// export default CountryItem;
-function CountryItem({ country }) {
+import type { Country } from "../types";
+
+function CountryItem({ country }: { country: Country }) {
   return (
     <li className="flex flex-col items-center gap-2 text-base font-semibold bg-dark-2 rounded-xl px-4 py-4 border border-dark-2/50">
       {/* Flag container */}
@@ -9,8 +10,12 @@ function CountryItem({ country }) {
           alt={`Flag of ${country.country}`}
           className="w-8 h-6 object-cover rounded"
           onError={(e) => {
-            e.target.style.display = "none";
-            e.target.nextSibling.style.display = "block";
+            // Fall back to the emoji span sitting right after the flag image.
+            const image = e.currentTarget;
+            image.style.display = "none";
+            const fallback = image.nextElementSibling;
+            if (fallback instanceof HTMLElement)
+              fallback.style.display = "block";
           }}
         />
         <span className="text-2xl leading-none hidden">{country.emoji}</span>

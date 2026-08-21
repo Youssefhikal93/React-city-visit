@@ -54,12 +54,13 @@ CHALLENGE
 
 import { useAuth } from "../context/AuthContext";
 import { useCities } from "../context/CitiesContext";
+import type { Country } from "../types";
 
 function User() {
   const { user, logout } = useAuth();
   const { cities } = useCities();
 
-  const countries = cities.reduce((arr, city) => {
+  const countries = cities.reduce<Country[]>((arr, city) => {
     if (!arr.map((el) => el.country).includes(city.country))
       return [...arr, { country: city.country, emoji: city.emoji }];
     else return arr;
@@ -69,6 +70,10 @@ function User() {
     // navigate("/");
     logout();
   }
+
+  // AppLayout only renders behind ProtectedRoute, so this narrows the type
+  // rather than describing a state the UI actually reaches.
+  if (!user) return null;
 
   return (
     <div className="absolute top-6 right-1 z-[999] group md:top-4 md:right-4">
@@ -112,7 +117,7 @@ function User() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0A 3 3 0 0113 7v1"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
               />
             </svg>
             <span className="hidden sm:inline">Logout</span>

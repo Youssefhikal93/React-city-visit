@@ -1,21 +1,24 @@
+import type { MouseEvent } from "react";
 import { Link } from "react-router-dom";
-import { useCities } from "../context/CitiesContext";
 
-const formatDate = (date) =>
+import { useCities } from "../context/CitiesContext";
+import type { City } from "../types";
+
+const formatDate = (date: string | null) =>
   new window.Intl.DateTimeFormat("en", {
     day: "numeric",
     month: "long",
     year: "numeric",
     weekday: "long",
-  }).format(new Date(date));
+  }).format(new Date(date ?? Date.now()));
 
-function CityItem({ city }) {
+function CityItem({ city }: { city: City }) {
   const { currentCity, deleteCity } = useCities();
   const { cityName, emoji, date, id, position } = city;
 
-  const isActive = currentCity && id === currentCity.id;
+  const isActive = id === currentCity?.id;
 
-  function handleDelete(e) {
+  function handleDelete(e: MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
     deleteCity(id);
   }

@@ -1,10 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
 import SpinnerFullPage from "../components/SpinnerFullPage";
 import { useAuth } from "../context/AuthContext";
 
-function ProtectedRoute({ children }) {
+function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, isRestoring } = useAuth();
   const navigate = useNavigate();
 
