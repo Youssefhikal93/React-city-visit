@@ -2,7 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { lazy, Suspense } from "react";
 
 import { CitiesProvider } from "./context/CitiesContext";
-import { AuthProvider } from "./context/FakeAuthContext";
+import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./pages/ProtectedRoute";
 
 // import HomePage from "./pages/HomePage";

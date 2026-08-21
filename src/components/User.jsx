@@ -1,4 +1,4 @@
-// import { useAuth } from "../context/FakeAuthContext";
+// import { useAuth } from "../context/AuthContext";
 // import { useNavigate } from "react-router-dom";
 // // const FAKE_USER = {
 // //   name: "Jack",
@@ -52,7 +52,7 @@ CHALLENGE
 // });
 // const useNavigate = () => (path) => console.log("Navigate to:", path);
 
-import { useAuth } from "../context/FakeAuthContext";
+import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useCities } from "../context/CitiesContext";
 
@@ -80,7 +80,7 @@ function User() {
         <div className="relative">
           <div className="w-8 h-8 md:w-12 md:h-12 bg-gradient-to-br from-brand-1 to-brand-2 rounded-full flex items-center justify-center shadow-lg md:w-10 md:h-10">
             <span className="text-dark-0 font-bold text-lg md:text-base">
-              {user.email.charAt(0).toUpperCase()}
+              {user.pin.charAt(0)}
             </span>
           </div>
           {/* Online indicator */}
@@ -93,7 +93,7 @@ function User() {
             Welcome back! 👋
           </div>
           <div className="text-light-0 text-xs md:text-sm truncate opacity-80">
-            {user.email}
+            PIN {user.pin}
           </div>
         </div>
 
@@ -128,10 +128,10 @@ function User() {
           {/* User details */}
           <div className="pb-3 border-b border-dark-2/50">
             <div className="text-light-1 font-semibold text-xs md:text-sm">
-              {user.name || "Travel Explorer"}
+              Travel Explorer
             </div>
             <div className="text-light-0 text-xs md:text-sm opacity-80">
-              {user.email}
+              PIN {user.pin}
             </div>
           </div>
 

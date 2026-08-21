@@ -188,7 +188,7 @@ import {
   useEffect,
   useReducer,
 } from "react";
-import { useAuth } from "../context/FakeAuthContext";
+import { useAuth } from "../context/AuthContext";
 
 const URL = "https://cities-json-server-api.onrender.com";
 // const URL = "http://localhost:8000";
