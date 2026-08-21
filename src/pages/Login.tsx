@@ -5,9 +5,10 @@ import PageNav from "../components/PageNav";
 import PinInput from "../components/PinInput";
 import Spinner from "../components/Spinner";
 import { useAuth } from "../context/AuthContext";
-import { PIN_LENGTH } from "../services/profiles";
+import { PIN_LENGTH, isValidUsername } from "../services/users";
 
 export default function Login() {
+  const [username, setUsername] = useState("");
   const [pin, setPin] = useState("");
   const [showPin, setShowPin] = useState(false);
 
@@ -18,14 +19,15 @@ export default function Login() {
     if (isAuthenticated) navigate("/app", { replace: true });
   }, [isAuthenticated, navigate]);
 
-  function handlePinChange(next: string) {
+  const canSubmit = isValidUsername(username) && pin.length === PIN_LENGTH;
+
+  function resetError() {
     if (error) clearError();
-    setPin(next);
   }
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    login(pin);
+    login(username, pin);
   }
 
   return (
@@ -42,15 +44,53 @@ export default function Login() {
               Welcome Back
             </h2>
             <p className="text-sm md:text-base text-light-0 text-center mb-8">
-              Enter your {PIN_LENGTH}-digit PIN to open your travel log.
+              Your username and {PIN_LENGTH}-digit PIN.
             </p>
 
-            <div className="mb-4">
+            {/* Username */}
+            <div className="flex flex-col gap-2 mb-6">
+              <label
+                htmlFor="username"
+                className="text-base md:text-lg font-semibold text-light-2"
+              >
+                Username
+              </label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={username}
+                onChange={(e) => {
+                  resetError();
+                  setUsername(e.target.value);
+                }}
+                disabled={loading}
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                maxLength={20}
+                placeholder="Enter your username"
+                className="w-full p-3 md:p-4 rounded-lg bg-light-2 text-dark-0 text-base placeholder-dark-2 border-2 border-transparent focus:outline-none focus:border-brand-2 focus:bg-white transition-all duration-300 disabled:opacity-50"
+              />
+            </div>
+
+            {/* PIN */}
+            <div className="flex flex-col gap-3 mb-4">
+              <label className="text-base md:text-lg font-semibold text-light-2">
+                PIN
+              </label>
               <PinInput
                 value={pin}
-                onChange={handlePinChange}
-                onComplete={(completed) => login(completed)}
+                onChange={(next) => {
+                  resetError();
+                  setPin(next);
+                }}
+                onComplete={(completed) => {
+                  // Only auto-submit once the username is usable too.
+                  if (isValidUsername(username)) login(username, completed);
+                }}
                 disabled={loading}
+                autoFocus={false}
                 mask={!showPin}
                 label="Login PIN"
               />
@@ -78,7 +118,7 @@ export default function Login() {
                 <div className="space-y-4">
                   <button
                     type="submit"
-                    disabled={pin.length !== PIN_LENGTH}
+                    disabled={!canSubmit}
                     className="w-full uppercase px-4 py-3 font-bold text-base rounded-lg bg-brand-2 text-dark-1
                                transition-all duration-300 hover:bg-brand-1 hover:scale-[1.02]
                                focus:outline-none focus:ring-2 focus:ring-brand-2
@@ -100,21 +140,13 @@ export default function Login() {
 
             <div className="text-center">
               <p className="text-light-2 text-sm md:text-base">
-                No PIN yet?{" "}
+                No account yet?{" "}
                 <Link
                   to="/signup"
                   className="text-brand-2 font-semibold hover:text-brand-1 hover:underline transition-all duration-300"
                 >
-                  Create one now
+                  Sign up now
                 </Link>
-              </p>
-            </div>
-
-            <div className="mt-6 p-4 bg-dark-1/50 rounded-lg border border-dark-1">
-              <p className="text-xs md:text-sm text-light-0 text-center">
-                <strong className="text-brand-1">Your PIN is your account.</strong>{" "}
-                No email, no password — the same PIN opens the same travel log on
-                any device.
               </p>
             </div>
           </form>

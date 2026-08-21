@@ -55,10 +55,13 @@ export interface Country {
   emoji: string;
 }
 
-/** The signed-in session: an anonymous Firebase uid plus the PIN it opened. */
+/** The signed-in session: an anonymous Firebase uid plus the account it opened. */
 export interface AuthUser {
   uid: string;
-  pin: string;
+  /** Lowercased database key. */
+  username: string;
+  /** Username as typed at sign-up, for display. */
+  displayName: string;
 }
 
 export interface AuthResult {

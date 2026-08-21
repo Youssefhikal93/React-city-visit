@@ -3,15 +3,33 @@
     ".read": false,
     ".write": false,
 
-    "profiles": {
-      "$pin": {
-        ".read": "auth != null && $pin.matches(/^[0-9]{4}$/)",
-        ".write": "auth != null && $pin.matches(/^[0-9]{4}$/)",
+    "users": {
+      "$username": {
+        // The PIN is never readable by a client. It can only be written once,
+        // at sign-up, which is also what makes claiming a username atomic.
+        "pin": {
+          ".write": "auth != null && !data.exists()",
+          ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}$/)"
+        },
 
-        "createdAt": { ".validate": "newData.isNumber()" },
-        "lastLoginAt": { ".validate": "newData.isNumber()" },
+        // Readable so sign-up can tell whether a username is already taken.
+        "profile": {
+          ".read": "auth != null",
+          ".write": "auth != null && (!data.exists() || root.child('sessions/' + auth.uid + '/username').val() === $username)",
 
+          "displayName": {
+            ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 20"
+          },
+          "createdAt": { ".validate": "newData.isNumber()" },
+          "lastLoginAt": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        },
+
+        // Only reachable by a session that has proved this account's PIN.
         "cities": {
+          ".read": "auth != null && root.child('sessions/' + auth.uid + '/username').val() === $username",
+          ".write": "auth != null && root.child('sessions/' + auth.uid + '/username').val() === $username",
+
           "$cityId": {
             ".validate": "newData.hasChildren(['cityName', 'position'])",
 
@@ -40,6 +58,26 @@
           }
         },
 
+        "$other": { ".validate": false }
+      }
+    },
+
+    // This is the PIN check. The write only succeeds when the submitted PIN
+    // equals the one stored for that username, so a wrong PIN is rejected by
+    // the database rather than by client code -- and the stored PIN never has
+    // to be readable by anyone.
+    "sessions": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['username', 'pin']) && root.child('users/' + newData.child('username').val() + '/pin').val() === newData.child('pin').val()",
+
+        "username": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9_-]{3,20}$/)"
+        },
+        "pin": {
+          ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}$/)"
+        },
         "$other": { ".validate": false }
       }
     }

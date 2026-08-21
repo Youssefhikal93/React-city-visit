@@ -12,12 +12,12 @@ import {
 import { db } from "./firebase";
 import type { City, CityUpdate, NewCity, StoredCity } from "../types";
 
-function citiesRef(pin: string) {
-  return ref(db, `profiles/${pin}/cities`);
+function citiesRef(username: string) {
+  return ref(db, `users/${username}/cities`);
 }
 
-function cityRef(pin: string, id: string) {
-  return ref(db, `profiles/${pin}/cities/${id}`);
+function cityRef(username: string, id: string) {
+  return ref(db, `users/${username}/cities/${id}`);
 }
 
 /**
@@ -57,29 +57,29 @@ function serializeDate(date: Date | string | null | undefined): string {
 }
 
 /**
- * Live subscription to one profile's cities. Returns the unsubscribe function
+ * Live subscription to one account's cities. Returns the unsubscribe function
  * so callers can detach on logout or unmount.
  */
 export function subscribeToCities(
-  pin: string,
+  username: string,
   onCities: (cities: City[]) => void,
   onError: (error: Error) => void
 ): Unsubscribe {
   return onValue(
-    citiesRef(pin),
+    citiesRef(username),
     (snapshot) => onCities(toCityList(snapshot.val())),
     (error) => onError(error)
   );
 }
 
-export async function fetchCity(pin: string, id: string): Promise<City> {
-  const snapshot = await get(cityRef(pin, id));
+export async function fetchCity(username: string, id: string): Promise<City> {
+  const snapshot = await get(cityRef(username, id));
   if (!snapshot.exists())
     throw new Error("That city is no longer in your list.");
   return normalizeCity(id, snapshot.val() as StoredCity);
 }
 
-export async function createCity(pin: string, city: NewCity): Promise<City> {
+export async function createCity(username: string, city: NewCity): Promise<City> {
   const payload = {
     cityName: city.cityName,
     country: city.country ?? "",
@@ -93,22 +93,22 @@ export async function createCity(pin: string, city: NewCity): Promise<City> {
     createdAt: serverTimestamp(),
   };
 
-  const created = await push(citiesRef(pin), payload);
+  const created = await push(citiesRef(username), payload);
   if (!created.key) throw new Error("Firebase did not return a key for the new city.");
 
   // Re-read so `createdAt` is the resolved server value, not the sentinel.
-  return fetchCity(pin, created.key);
+  return fetchCity(username, created.key);
 }
 
 export async function updateCity(
-  pin: string,
+  username: string,
   id: string,
   updates: CityUpdate
 ): Promise<City> {
-  await update(cityRef(pin, id), updates);
-  return fetchCity(pin, id);
+  await update(cityRef(username, id), updates);
+  return fetchCity(username, id);
 }
 
-export async function deleteCity(pin: string, id: string): Promise<void> {
-  await remove(cityRef(pin, id));
+export async function deleteCity(username: string, id: string): Promise<void> {
+  await remove(cityRef(username, id));
 }

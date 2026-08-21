@@ -13,11 +13,16 @@ import type { User as FirebaseUser } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "../services/firebase";
 import {
   PIN_LENGTH,
-  createProfile,
+  closeSession,
+  createUser,
+  fetchProfile,
   isValidPin,
-  profileExists,
-  touchProfile,
-} from "../services/profiles";
+  normalizeUsername,
+  openSession,
+  readSession,
+  touchLogin,
+  usernameError,
+} from "../services/users";
 import type { AuthResult, AuthUser } from "../types";
 
 interface AuthState {
@@ -37,39 +42,16 @@ type AuthAction =
   | { type: "clearError" };
 
 interface AuthContextValue extends AuthState {
-  login: (pin: string) => Promise<AuthResult>;
-  signup: (pin: string) => Promise<AuthResult>;
+  login: (username: string, pin: string) => Promise<AuthResult>;
+  signup: (username: string, pin: string) => Promise<AuthResult>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-// The Firebase anonymous session lives in IndexedDB and survives a reload, but
-// the PIN that selects *which* travel log to open does not, so we keep it here.
-const PIN_STORAGE_KEY = "worldvisit:pin";
-
 const NOT_CONFIGURED =
   "Firebase isn't configured. Copy .env.example to .env first.";
-
-function readStoredPin(): string | null {
-  try {
-    const pin = window.localStorage.getItem(PIN_STORAGE_KEY);
-    return isValidPin(pin) ? pin : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredPin(pin: string | null): void {
-  try {
-    if (pin) window.localStorage.setItem(PIN_STORAGE_KEY, pin);
-    else window.localStorage.removeItem(PIN_STORAGE_KEY);
-  } catch {
-    // Private-browsing modes can block storage; the session still works, it
-    // just won't survive a reload.
-  }
-}
 
 const initialState: AuthState = {
   user: null,
@@ -105,6 +87,11 @@ function reducer(state: AuthState, action: AuthAction): AuthState {
   }
 }
 
+function isPermissionDenied(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : "";
+  return message.includes("PERMISSION_DENIED") || message.includes("permission_denied");
+}
+
 /** Turns Firebase error codes into something worth showing a person. */
 function readableError(err: unknown): string {
   const code =
@@ -119,8 +106,6 @@ function readableError(err: unknown): string {
     return "Can't reach Firebase. Check your connection and try again.";
   if (code === "auth/too-many-requests")
     return "Too many attempts. Wait a moment and try again.";
-  if (message.includes("PERMISSION_DENIED"))
-    return "The database rejected that request. Check the Realtime Database rules.";
 
   return message || "Something went wrong. Please try again.";
 }
@@ -129,19 +114,41 @@ function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { user, isAuthenticated, isRestoring, error, loading } = state;
 
-  // Restore a previous session: an anonymous Firebase user plus a stored PIN.
+  /**
+   * Restore a previous session. The anonymous Firebase account survives a
+   * reload, and the account it is signed into is recorded in the database
+   * under sessions/{uid}, so nothing sensitive sits in localStorage.
+   */
   useEffect(() => {
     if (!isFirebaseConfigured) {
       dispatch({ type: "restore/done" });
       return;
     }
 
-    return onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      const pin = readStoredPin();
+    return onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      if (!firebaseUser) {
+        dispatch({ type: "restore/done" });
+        return;
+      }
 
-      if (firebaseUser && pin) {
-        dispatch({ type: "login", payload: { uid: firebaseUser.uid, pin } });
-      } else {
+      try {
+        const username = await readSession(firebaseUser.uid);
+        if (!username) {
+          dispatch({ type: "restore/done" });
+          return;
+        }
+
+        const profile = await fetchProfile(username);
+        dispatch({
+          type: "login",
+          payload: {
+            uid: firebaseUser.uid,
+            username,
+            displayName: profile?.displayName ?? username,
+          },
+        });
+      } catch (err) {
+        console.error("Could not restore session:", err);
         dispatch({ type: "restore/done" });
       }
     });
@@ -154,10 +161,16 @@ function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(
-    async (pin: string): Promise<AuthResult> => {
+    async (rawUsername: string, pin: string): Promise<AuthResult> => {
       if (!isFirebaseConfigured) {
         dispatch({ type: "error", payload: NOT_CONFIGURED });
         return { success: false, error: NOT_CONFIGURED };
+      }
+
+      const nameProblem = usernameError(rawUsername);
+      if (nameProblem) {
+        dispatch({ type: "error", payload: nameProblem });
+        return { success: false, error: nameProblem };
       }
 
       if (!isValidPin(pin)) {
@@ -166,21 +179,40 @@ function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: message };
       }
 
+      const username = normalizeUsername(rawUsername);
       dispatch({ type: "loading" });
 
       try {
         const firebaseUser = await ensureAnonymousUser();
 
-        if (!(await profileExists(pin))) {
-          const message =
-            "No travel log found for that PIN. Sign up to start one.";
+        const profile = await fetchProfile(username);
+        if (!profile) {
+          const message = `No account named "${rawUsername.trim()}". Sign up to create one.`;
           dispatch({ type: "error", payload: message });
           return { success: false, error: message };
         }
 
-        await touchProfile(pin);
-        writeStoredPin(pin);
-        dispatch({ type: "login", payload: { uid: firebaseUser.uid, pin } });
+        // The rules reject this write unless the PIN matches the stored one.
+        try {
+          await openSession(firebaseUser.uid, username, pin);
+        } catch (err) {
+          if (isPermissionDenied(err)) {
+            const message = "That PIN doesn't match this account.";
+            dispatch({ type: "error", payload: message });
+            return { success: false, error: message };
+          }
+          throw err;
+        }
+
+        await touchLogin(username);
+        dispatch({
+          type: "login",
+          payload: {
+            uid: firebaseUser.uid,
+            username,
+            displayName: profile.displayName,
+          },
+        });
         return { success: true, error: null };
       } catch (err) {
         console.error("Login failed:", err);
@@ -193,10 +225,16 @@ function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signup = useCallback(
-    async (pin: string): Promise<AuthResult> => {
+    async (rawUsername: string, pin: string): Promise<AuthResult> => {
       if (!isFirebaseConfigured) {
         dispatch({ type: "error", payload: NOT_CONFIGURED });
         return { success: false, error: NOT_CONFIGURED };
+      }
+
+      const nameProblem = usernameError(rawUsername);
+      if (nameProblem) {
+        dispatch({ type: "error", payload: nameProblem });
+        return { success: false, error: nameProblem };
       }
 
       if (!isValidPin(pin)) {
@@ -205,25 +243,34 @@ function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: message };
       }
 
+      const displayName = rawUsername.trim();
+      const username = normalizeUsername(displayName);
       dispatch({ type: "loading" });
 
       try {
         const firebaseUser = await ensureAnonymousUser();
 
-        if (await profileExists(pin)) {
-          const message =
-            "That PIN is already taken. Pick another one, or log in with it.";
+        if (await fetchProfile(username)) {
+          const message = `"${displayName}" is taken. Try another username, or log in.`;
           dispatch({ type: "error", payload: message });
           return { success: false, error: message };
         }
 
-        await createProfile(pin);
-        writeStoredPin(pin);
-        dispatch({ type: "login", payload: { uid: firebaseUser.uid, pin } });
+        await createUser(username, displayName, pin);
+        await openSession(firebaseUser.uid, username, pin);
+
+        dispatch({
+          type: "login",
+          payload: { uid: firebaseUser.uid, username, displayName },
+        });
         return { success: true, error: null };
       } catch (err) {
         console.error("Signup failed:", err);
-        const message = readableError(err);
+        // The PIN write is only allowed while the username is unclaimed, so a
+        // denial here means somebody took the name in between the two calls.
+        const message = isPermissionDenied(err)
+          ? `"${displayName}" was just taken. Try another username.`
+          : readableError(err);
         dispatch({ type: "error", payload: message });
         return { success: false, error: message };
       }
@@ -232,8 +279,8 @@ function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async (): Promise<void> => {
-    writeStoredPin(null);
     try {
+      if (auth.currentUser) await closeSession(auth.currentUser.uid);
       await signOut(auth);
     } catch (err) {
       console.error("Sign out failed:", err);

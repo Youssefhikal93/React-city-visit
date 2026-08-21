@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ChangeEvent, type KeyboardEvent } from "react";
 
-import { PIN_LENGTH } from "../services/profiles";
+import { PIN_LENGTH } from "../services/users";
 
 interface PinInputProps {
   /** Digits entered so far, e.g. "12" mid-entry. */

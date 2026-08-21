@@ -10,7 +10,7 @@ A modern travel tracking application with city management, interactive map, and 
 - 🌆 City details and notes
 - 📅 Travel date tracking
 - 📸 Photo uploads for memories
-- 🔐 4-digit PIN sign-in over Firebase anonymous auth
+- 🔐 Username + 4-digit PIN sign-in, with the PIN verified by the database rules
 - ⚡ Live sync — every change lands in Firebase and appears in other tabs instantly
 - 🌓 Dark theme by default
 
@@ -30,20 +30,54 @@ A modern travel tracking application with city management, interactive map, and 
 
 ## 🔐 How sign-in works
 
-There are no emails and no passwords. Signing up means picking a **4-digit
-PIN**, and that PIN *is* the account:
+You sign up with a **username** and a **4-digit PIN**, and log back in with the
+same two. No email, no email verification.
 
-- `signInAnonymously()` gets a real Firebase credential, which is what the
-  database rules check — without it, every read and write is rejected.
-- The PIN selects which travel log to open (`profiles/{pin}`), so the same PIN
-  reaches the same cities from any browser or device.
-- The PIN is kept in `localStorage`, so a page refresh doesn't sign you out.
+- `signInAnonymously()` supplies a real Firebase credential. Without it every
+  read and write is rejected, so it is what makes the rules enforceable at all.
+- The **username** identifies the account (`users/{username}`). It is stored
+  lowercased as the database key, so `Youssef` and `youssef` are the same login.
+- The **PIN is the secret, and the client never sees it.** It is stored at
+  `users/{username}/pin`, which has no read rule at all — not even for the
+  account's owner.
 
-**This is deliberately low-security.** 10,000 PINs exist, any signed-in visitor
-who guesses one can read that log, and a PIN cannot be recovered if forgotten.
-That's the right trade-off for a demo travel journal — don't store anything
-private in it. For real accounts, swap `signInAnonymously` for
-`signInWithEmailAndPassword` and key profiles on `auth.uid` instead of the PIN.
+### The PIN is checked by the database, not by JavaScript
+
+Logging in writes `{ username, pin }` to `sessions/{uid}`. That write has a
+`.validate` rule:
+
+```
+root.child('users/' + newData.child('username').val() + '/pin').val()
+  === newData.child('pin').val()
+```
+
+So a wrong PIN fails with `PERMISSION_DENIED` from Firebase itself. Cities are
+then gated on the session that write created:
+
+```
+".read": "root.child('sessions/' + auth.uid + '/username').val() === $username"
+```
+
+Which means the browser never downloads a PIN or a hash to compare, and there is
+nothing to brute-force offline. Verified with an authenticated REST read while
+signed in as a second account:
+
+```
+GET /users/maria/cities.json?auth=<maria's token>    -> 200
+GET /users/youssef/cities.json?auth=<maria's token>  -> 401 Permission denied
+GET /users/youssef/pin.json?auth=<maria's token>     -> 401 Permission denied
+```
+
+The session lives in the database keyed by the anonymous uid, so a page refresh
+restores it and **nothing sensitive is kept in `localStorage`**.
+
+### What this still doesn't protect against
+
+A 4-digit PIN is 10,000 guesses, and the rules do not rate-limit login attempts,
+so an attacker who knows a username could grind through them online. Usernames
+are also enumerable, since sign-up has to be able to tell you a name is taken.
+Fine for a demo travel journal — don't store anything private in it. For real
+accounts, use Firebase's Email/Password provider and key `users/` on `auth.uid`.
 
 ## 🚀 Getting started
 
@@ -87,15 +121,22 @@ Firebase, and the login screen will say so.
 ### Data shape
 
 ```
-profiles/
-  1234/                      <- the 4-digit PIN
-    createdAt, lastLoginAt
+users/
+  youssef/                   <- lowercased username, the account key
+    pin: "1234"              <- no read rule anywhere; never leaves the server
+    profile/                 <- readable, so signup can check availability
+      displayName: "Youssef" <- the casing as typed
+      createdAt, lastLoginAt
     cities/
       -PabcXYZ.../           <- database push key, used as the city id
         cityName, country, emoji, date, notes
         position: { lat, lng }
         image                <- optional base64 JPEG, resized to 400px
         createdAt
+
+sessions/
+  {anonymous uid}/           <- proof that this browser knows the PIN
+    username, pin            <- the write is rejected unless the PIN matches
 ```
 
 ### TypeScript
@@ -117,9 +158,9 @@ npm run lint
 npm run build       # typechecks, then builds
 ```
 
-`database.rules.json` denies everything by default, then allows an
-authenticated session to read and write a 4-digit profile, validates every city
-field's type and length, and range-checks coordinates.
+`database.rules.json` denies everything by default, then allows a
+session that has proved its PIN to read and write that account, validates every
+city field's type and length, and range-checks coordinates.
 
 ### Where the Firebase code lives
 
@@ -130,7 +171,7 @@ files and nothing else:
 | File | Responsibility |
 | --- | --- |
 | `services/firebase.ts` | App init from env vars, `auth` and `db` handles |
-| `services/profiles.ts` | PIN validation, profile create / exists / touch |
+| `services/users.ts` | Username/PIN rules, account create, session open/close |
 | `services/cities.ts` | City subscribe, fetch, create, update, delete |
 
 ### < Happy Traveling ! ✈️ 🌍/>

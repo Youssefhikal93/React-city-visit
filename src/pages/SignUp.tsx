@@ -5,13 +5,17 @@ import PageNav from "../components/PageNav";
 import PinInput from "../components/PinInput";
 import Spinner from "../components/Spinner";
 import { useAuth } from "../context/AuthContext";
-import { PIN_LENGTH } from "../services/profiles";
+import {
+  PIN_LENGTH,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+  isValidUsername,
+} from "../services/users";
 
 export default function Signup() {
+  const [username, setUsername] = useState("");
   const [pin, setPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
   const [showPin, setShowPin] = useState(false);
-  const [localError, setLocalError] = useState("");
 
   const { signup, isAuthenticated, error, loading, clearError } = useAuth();
   const navigate = useNavigate();
@@ -20,32 +24,16 @@ export default function Signup() {
     if (isAuthenticated) navigate("/app", { replace: true });
   }, [isAuthenticated, navigate]);
 
-  const isComplete =
-    pin.length === PIN_LENGTH && confirmPin.length === PIN_LENGTH;
+  const canSubmit = isValidUsername(username) && pin.length === PIN_LENGTH;
 
-  function resetErrors() {
-    if (localError) setLocalError("");
+  function resetError() {
     if (error) clearError();
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
-    if (pin.length !== PIN_LENGTH) {
-      setLocalError(`Choose a ${PIN_LENGTH}-digit PIN.`);
-      return;
-    }
-
-    if (pin !== confirmPin) {
-      setLocalError("The two PINs don't match.");
-      return;
-    }
-
-    setLocalError("");
-    await signup(pin);
+    await signup(username, pin);
   }
-
-  const shownError = localError || error;
 
   return (
     <main className="min-h-screen bg-cover bg-center bg-no-repeat bg-[url('/bg.jpg')] font-manrope">
@@ -61,39 +49,62 @@ export default function Signup() {
               Create Account
             </h2>
             <p className="text-sm md:text-base text-light-0 text-center mb-8">
-              Pick a {PIN_LENGTH}-digit PIN. That's the whole sign-up.
+              Pick a username and a {PIN_LENGTH}-digit PIN. That's the whole
+              sign-up.
             </p>
 
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-light-2 text-center mb-3">
-                Choose your PIN
+            {/* Username */}
+            <div className="flex flex-col gap-2 mb-2">
+              <label
+                htmlFor="username"
+                className="text-base md:text-lg font-semibold text-light-2"
+              >
+                Username
+              </label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={username}
+                onChange={(e) => {
+                  resetError();
+                  setUsername(e.target.value);
+                }}
+                disabled={loading}
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                maxLength={USERNAME_MAX_LENGTH}
+                placeholder="Pick a username"
+                className="w-full p-3 md:p-4 rounded-lg bg-light-2 text-dark-0 text-base placeholder-dark-2 border-2 border-transparent focus:outline-none focus:border-brand-2 focus:bg-white transition-all duration-300 disabled:opacity-50"
+              />
+              <p className="text-xs text-light-0">
+                <span
+                  className={
+                    isValidUsername(username) ? "text-brand-2" : "text-light-0"
+                  }
+                >
+                  ✓ {USERNAME_MIN_LENGTH}–{USERNAME_MAX_LENGTH} characters:
+                  letters, numbers, hyphens, underscores
+                </span>
+              </p>
+            </div>
+
+            {/* PIN */}
+            <div className="flex flex-col gap-3 mb-4 mt-6">
+              <label className="text-base md:text-lg font-semibold text-light-2">
+                Choose a PIN
               </label>
               <PinInput
                 value={pin}
                 onChange={(next) => {
-                  resetErrors();
+                  resetError();
                   setPin(next);
-                }}
-                disabled={loading}
-                mask={!showPin}
-                label="New PIN"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-semibold text-light-2 text-center mb-3">
-                Confirm your PIN
-              </label>
-              <PinInput
-                value={confirmPin}
-                onChange={(next) => {
-                  resetErrors();
-                  setConfirmPin(next);
                 }}
                 disabled={loading}
                 autoFocus={false}
                 mask={!showPin}
-                label="Confirm PIN"
+                label="New PIN"
               />
             </div>
 
@@ -107,13 +118,13 @@ export default function Signup() {
               </button>
             </div>
 
-            {shownError && (
+            {error && (
               <div className="mb-6">
                 <p
                   role="alert"
                   className="text-red-400 text-center text-sm md:text-base bg-red-900/20 p-3 rounded-lg border border-red-500/30"
                 >
-                  {shownError}
+                  {error}
                 </p>
               </div>
             )}
@@ -123,13 +134,13 @@ export default function Signup() {
                 <div className="text-center">
                   <Spinner />
                   <p className="text-xl md:text-2xl font-bold text-brand-2 mt-4 animate-pulse">
-                    Creating your log...
+                    Creating your account...
                   </p>
                 </div>
               ) : (
                 <button
                   type="submit"
-                  disabled={!isComplete}
+                  disabled={!canSubmit}
                   className="w-full uppercase px-4 py-3 font-bold text-base rounded-lg bg-brand-2 text-dark-1
                              transition-all duration-300 hover:bg-brand-1 hover:scale-[1.02]
                              focus:outline-none focus:ring-2 focus:ring-brand-2
@@ -142,7 +153,7 @@ export default function Signup() {
 
             <div className="text-center">
               <p className="text-light-2 text-sm md:text-base">
-                Already have a PIN?{" "}
+                Already have an account?{" "}
                 <Link
                   to="/login"
                   className="text-brand-2 font-semibold hover:text-brand-1 hover:underline transition-all duration-300"
@@ -160,10 +171,10 @@ export default function Signup() {
                 <li>✓ Track your travel adventures</li>
                 <li>✓ Interactive world map</li>
                 <li>✓ Saved to Firebase in real time</li>
-                <li>✓ Free to use</li>
+                <li>✓ Log back in from any device</li>
               </ul>
               <p className="text-xs text-light-0/80 mt-3 text-center">
-                Write your PIN down — it's the only way back into this log.
+                Remember your PIN — there's no way to reset it.
               </p>
             </div>
           </form>
