@@ -19,9 +19,8 @@
     "noImplicitOverride": true,
     "exactOptionalPropertyTypes": false,
 
-    /* Left on so the conversion can land file by file without breaking the
-       build; the last commit of the migration turns it off. */
-    "allowJs": true
+    /* The whole source tree is TypeScript now. */
+    "allowJs": false
   },
   "include": ["src", "vite.config.ts"]
 }

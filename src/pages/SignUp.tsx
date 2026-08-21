@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import PageNav from "../components/PageNav";
@@ -28,7 +28,7 @@ export default function Signup() {
     if (error) clearError();
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     if (pin.length !== PIN_LENGTH) {
