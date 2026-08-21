@@ -5,21 +5,53 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  type ReactNode,
 } from "react";
 
 import { useAuth } from "./AuthContext";
 import * as citiesApi from "../services/cities";
+import type { City, CityUpdate, NewCity } from "../types";
 
-const CitiesContext = createContext();
+interface CitiesState {
+  cities: City[];
+  isLoading: boolean;
+  currentCity: City | null;
+  error: string;
+}
 
-const initialState = {
+type CitiesAction =
+  | { type: "loading" }
+  | { type: "cities/loaded"; payload: City[] }
+  | { type: "city/loaded"; payload: City }
+  | { type: "city/created"; payload: City }
+  | { type: "city/deleted"; payload: string }
+  | { type: "error"; payload: string }
+  | { type: "reset" }
+  | { type: "clearError" };
+
+interface CreateCityResult {
+  success: boolean;
+  error?: string;
+}
+
+interface CitiesContextValue extends CitiesState {
+  getCity: (id: string) => Promise<void>;
+  createCity: (newCity: NewCity) => Promise<CreateCityResult>;
+  deleteCity: (id: string) => Promise<void>;
+  updateCity: (id: string, updates: CityUpdate) => Promise<City | null>;
+  clearError: () => void;
+}
+
+const CitiesContext = createContext<CitiesContextValue | undefined>(undefined);
+
+const initialState: CitiesState = {
   cities: [],
   isLoading: false,
-  currentCity: {},
+  currentCity: null,
   error: "",
 };
 
-function reducer(state, action) {
+function reducer(state: CitiesState, action: CitiesAction): CitiesState {
   switch (action.type) {
     case "loading":
       return { ...state, isLoading: true };
@@ -35,7 +67,7 @@ function reducer(state, action) {
         ...state,
         isLoading: false,
         currentCity:
-          state.currentCity.id === action.payload ? {} : state.currentCity,
+          state.currentCity?.id === action.payload ? null : state.currentCity,
       };
     case "error":
       return { ...state, isLoading: false, error: action.payload };
@@ -48,7 +80,11 @@ function reducer(state, action) {
   }
 }
 
-function CitiesProvider({ children }) {
+function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback;
+}
+
+function CitiesProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const pin = user?.pin ?? null;
 
@@ -85,7 +121,7 @@ function CitiesProvider({ children }) {
   }, [pin]);
 
   const getCity = useCallback(
-    async (id) => {
+    async (id: string): Promise<void> => {
       if (!pin || !id) return;
 
       dispatch({ type: "loading" });
@@ -94,14 +130,17 @@ function CitiesProvider({ children }) {
         dispatch({ type: "city/loaded", payload: city });
       } catch (err) {
         console.error("Failed to load city:", err);
-        dispatch({ type: "error", payload: err.message });
+        dispatch({
+          type: "error",
+          payload: errorMessage(err, "Couldn't load that city."),
+        });
       }
     },
     [pin]
   );
 
   const createCity = useCallback(
-    async (newCity) => {
+    async (newCity: NewCity): Promise<CreateCityResult> => {
       if (!pin) return { success: false, error: "Not authenticated" };
 
       dispatch({ type: "loading" });
@@ -122,15 +161,16 @@ function CitiesProvider({ children }) {
         return { success: true };
       } catch (err) {
         console.error("Failed to create city:", err);
-        dispatch({ type: "error", payload: err.message });
-        return { success: false, error: err.message };
+        const message = errorMessage(err, "Couldn't save that city.");
+        dispatch({ type: "error", payload: message });
+        return { success: false, error: message };
       }
     },
     [pin, cities]
   );
 
   const deleteCity = useCallback(
-    async (id) => {
+    async (id: string): Promise<void> => {
       if (!pin) return;
 
       dispatch({ type: "loading" });
@@ -139,14 +179,17 @@ function CitiesProvider({ children }) {
         dispatch({ type: "city/deleted", payload: id });
       } catch (err) {
         console.error("Failed to delete city:", err);
-        dispatch({ type: "error", payload: err.message });
+        dispatch({
+          type: "error",
+          payload: errorMessage(err, "Couldn't delete that city."),
+        });
       }
     },
     [pin]
   );
 
   const updateCity = useCallback(
-    async (id, updates) => {
+    async (id: string, updates: CityUpdate): Promise<City | null> => {
       if (!pin) return null;
 
       dispatch({ type: "loading" });
@@ -156,14 +199,17 @@ function CitiesProvider({ children }) {
         return updated;
       } catch (err) {
         console.error("Failed to update city:", err);
-        dispatch({ type: "error", payload: err.message });
+        dispatch({
+          type: "error",
+          payload: errorMessage(err, "Couldn't update that city."),
+        });
         throw err;
       }
     },
     [pin]
   );
 
-  const value = useMemo(
+  const value = useMemo<CitiesContextValue>(
     () => ({
       cities,
       isLoading,
@@ -193,7 +239,7 @@ function CitiesProvider({ children }) {
   );
 }
 
-function useCities() {
+function useCities(): CitiesContextValue {
   const context = useContext(CitiesContext);
   if (context === undefined)
     throw new Error("CitiesContext was used outside CitiesProvider");
