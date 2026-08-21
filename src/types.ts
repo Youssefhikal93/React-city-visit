@@ -49,6 +49,12 @@ export interface StoredCity {
   position?: { lat?: number | string; lng?: number | string };
 }
 
+/** A country rolled up from the city list, for the countries view. */
+export interface Country {
+  country: string;
+  emoji: string;
+}
+
 /** The signed-in session: an anonymous Firebase uid plus the PIN it opened. */
 export interface AuthUser {
   uid: string;

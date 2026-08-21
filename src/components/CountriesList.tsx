@@ -3,6 +3,7 @@ import Spinner from "./Spinner";
 import CountryItem from "./CountryItem";
 import Message from "./Message";
 import { useCities } from "../context/CitiesContext";
+import type { Country } from "../types";
 
 function CountriesList() {
   const { isLoading, cities } = useCities();
@@ -18,7 +19,7 @@ function CountriesList() {
       />
     );
 
-  const countries = cities.reduce((arr, city) => {
+  const countries = cities.reduce<Country[]>((arr, city) => {
     if (!arr.map((el) => el.country).includes(city.country))
       return [...arr, { country: city.country, emoji: city.emoji }];
     else return arr;

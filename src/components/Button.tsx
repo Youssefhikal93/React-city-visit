@@ -1,4 +1,15 @@
-function Button({ children, onClick, type }) {
+import type { ReactNode } from "react";
+
+/** Visual variant, not the DOM button type. */
+type ButtonVariant = "primary" | "back" | "position";
+
+interface ButtonProps {
+  children: ReactNode;
+  onClick?: () => void;
+  type?: ButtonVariant;
+}
+
+function Button({ children, onClick, type }: ButtonProps) {
   const base =
     "uppercase px-4 py-2 font-manrope text-base rounded cursor-pointer border-none ";
   let variant = "";
