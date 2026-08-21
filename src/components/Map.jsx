@@ -220,7 +220,6 @@ import { useURLPosition } from "../hooks/useURLPosition";
 
 function Map() {
   const [mapPosition, setMapPosition] = useState([40, 0]);
-  const navigate = useNavigate();
   const { cities } = useCities();
   const {
     getPosition: getPositionGeoLocation,

@@ -367,7 +367,7 @@ import Button from "./Button";
 import Spinner from "./Spinner";
 
 const formatDate = (date) =>
-  new Intl.DateTimeFormat("en", {
+  new window.Intl.DateTimeFormat("en", {
     day: "numeric",
     month: "long",
     year: "numeric",

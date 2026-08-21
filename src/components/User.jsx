@@ -53,13 +53,11 @@ CHALLENGE
 // const useNavigate = () => (path) => console.log("Navigate to:", path);
 
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { useCities } from "../context/CitiesContext";
 
 function User() {
   const { user, logout } = useAuth();
   const { cities } = useCities();
-  const navigate = useNavigate();
 
   const countries = cities.reduce((arr, city) => {
     if (!arr.map((el) => el.country).includes(city.country))
