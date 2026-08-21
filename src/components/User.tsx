@@ -83,7 +83,7 @@ function User() {
         <div className="relative">
           <div className="w-8 h-8 md:w-12 md:h-12 bg-gradient-to-br from-brand-1 to-brand-2 rounded-full flex items-center justify-center shadow-lg md:w-10 md:h-10">
             <span className="text-dark-0 font-bold text-lg md:text-base">
-              {user.pin.charAt(0)}
+              {user.displayName.charAt(0).toUpperCase()}
             </span>
           </div>
           {/* Online indicator */}
@@ -96,7 +96,7 @@ function User() {
             Welcome back! 👋
           </div>
           <div className="text-light-0 text-xs md:text-sm truncate opacity-80">
-            PIN {user.pin}
+            {user.displayName}
           </div>
         </div>
 
@@ -134,7 +134,7 @@ function User() {
               Travel Explorer
             </div>
             <div className="text-light-0 text-xs md:text-sm opacity-80">
-              PIN {user.pin}
+              {user.displayName}
             </div>
           </div>
 

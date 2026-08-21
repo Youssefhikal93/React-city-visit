@@ -86,7 +86,7 @@ function errorMessage(err: unknown, fallback: string): string {
 
 function CitiesProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const pin = user?.pin ?? null;
+  const username = user?.username ?? null;
 
   const [{ cities, isLoading, currentCity, error }, dispatch] = useReducer(
     reducer,
@@ -95,10 +95,10 @@ function CitiesProvider({ children }: { children: ReactNode }) {
 
   const clearError = useCallback(() => dispatch({ type: "clearError" }), []);
 
-  // One live listener per signed-in PIN: edits from another tab or device show
-  // up here without a refetch, and logging out tears it down.
+  // One live listener per signed-in account: edits from another tab or device
+  // show up here without a refetch, and logging out tears it down.
   useEffect(() => {
-    if (!pin) {
+    if (!username) {
       dispatch({ type: "reset" });
       return;
     }
@@ -106,7 +106,7 @@ function CitiesProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "loading" });
 
     const unsubscribe = citiesApi.subscribeToCities(
-      pin,
+      username,
       (list) => dispatch({ type: "cities/loaded", payload: list }),
       (err) => {
         console.error("Cities subscription failed:", err);
@@ -118,15 +118,15 @@ function CitiesProvider({ children }: { children: ReactNode }) {
     );
 
     return unsubscribe;
-  }, [pin]);
+  }, [username]);
 
   const getCity = useCallback(
     async (id: string): Promise<void> => {
-      if (!pin || !id) return;
+      if (!username || !id) return;
 
       dispatch({ type: "loading" });
       try {
-        const city = await citiesApi.fetchCity(pin, id);
+        const city = await citiesApi.fetchCity(username, id);
         dispatch({ type: "city/loaded", payload: city });
       } catch (err) {
         console.error("Failed to load city:", err);
@@ -136,12 +136,12 @@ function CitiesProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [pin]
+    [username]
   );
 
   const createCity = useCallback(
     async (newCity: NewCity): Promise<CreateCityResult> => {
-      if (!pin) return { success: false, error: "Not authenticated" };
+      if (!username) return { success: false, error: "Not authenticated" };
 
       dispatch({ type: "loading" });
       try {
@@ -156,7 +156,7 @@ function CitiesProvider({ children }: { children: ReactNode }) {
           );
         }
 
-        const created = await citiesApi.createCity(pin, newCity);
+        const created = await citiesApi.createCity(username, newCity);
         dispatch({ type: "city/created", payload: created });
         return { success: true };
       } catch (err) {
@@ -166,16 +166,16 @@ function CitiesProvider({ children }: { children: ReactNode }) {
         return { success: false, error: message };
       }
     },
-    [pin, cities]
+    [username, cities]
   );
 
   const deleteCity = useCallback(
     async (id: string): Promise<void> => {
-      if (!pin) return;
+      if (!username) return;
 
       dispatch({ type: "loading" });
       try {
-        await citiesApi.deleteCity(pin, id);
+        await citiesApi.deleteCity(username, id);
         dispatch({ type: "city/deleted", payload: id });
       } catch (err) {
         console.error("Failed to delete city:", err);
@@ -185,16 +185,16 @@ function CitiesProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [pin]
+    [username]
   );
 
   const updateCity = useCallback(
     async (id: string, updates: CityUpdate): Promise<City | null> => {
-      if (!pin) return null;
+      if (!username) return null;
 
       dispatch({ type: "loading" });
       try {
-        const updated = await citiesApi.updateCity(pin, id, updates);
+        const updated = await citiesApi.updateCity(username, id, updates);
         dispatch({ type: "city/loaded", payload: updated });
         return updated;
       } catch (err) {
@@ -206,7 +206,7 @@ function CitiesProvider({ children }: { children: ReactNode }) {
         throw err;
       }
     },
-    [pin]
+    [username]
   );
 
   const value = useMemo<CitiesContextValue>(
