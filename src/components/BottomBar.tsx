@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+﻿import { Link, useLocation } from "react-router-dom";
 
 const tabClassName =
   "flex h-12 flex-1 items-center justify-center rounded-lg px-3 text-sm font-semibold transition-colors";
@@ -13,7 +13,7 @@ function BottomBar() {
   return (
     <nav
       aria-label="Views"
-      className="fixed inset-x-0 bottom-0 z-[1000] flex h-16 items-center gap-1 border-t border-dark-2 bg-dark-1 px-2 shadow-2xl"
+      className="fixed inset-x-0 bottom-0 z-[1000] flex h-[calc(4rem+env(safe-area-inset-bottom))] items-center gap-1 border-t border-dark-2 bg-dark-1 px-2 pb-[env(safe-area-inset-bottom)] shadow-2xl"
     >
       <Link
         to="map"
@@ -51,3 +51,5 @@ function BottomBar() {
 }
 
 export default BottomBar;
+
+
