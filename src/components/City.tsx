@@ -1,368 +1,7 @@
-// import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-// import styles from "./City.module.css";
-// import { useCities } from "../context/citiesContext";
-// import { useEffect } from "react";
-// import Button from "./Button";
-// import Spinner from "./Spinner";
-
-// const formatDate = (date) =>
-//   new Intl.DateTimeFormat("en", {
-//     day: "numeric",
-//     month: "long",
-//     year: "numeric",
-//     weekday: "long",
-//   }).format(new Date(date));
-
-// function City() {
-//   const { id } = useParams();
-//   const navigate = useNavigate();
-//   const { currentCity, getCity, isLoading } = useCities();
-//   const { cityName, emoji, date, notes } = currentCity;
-
-//   useEffect(
-//     function () {
-//       getCity(id);
-//     },
-//     [currentCity.id]
-//   );
-
-//   if (isLoading) return <Spinner />;
-
-//   return (
-//     <div className={styles.city}>
-//       <div className={styles.row}>
-//         <h6>City name</h6>
-//         <h3>
-//           {/* <span>{emoji}</span> {cityName} */}
-//           <div>
-//             <img
-//               src={`https://flagcdn.com/24x18/${emoji.toLowerCase()}.png`}
-//               alt={`Flag of ${emoji.toUpperCase()}`}
-//               className={styles.emoji}
-//               style={{ width: "24px", height: "18px", marginRight: "0.5rem" }}
-//             />
-//             <span>{cityName}</span>
-//           </div>
-//         </h3>
-//       </div>
-
-//       <div className={styles.row}>
-//         <h6>You went to {cityName} on</h6>
-//         <p>{formatDate(date || null)}</p>
-//       </div>
-
-//       {notes && (
-//         <div className={styles.row}>
-//           <h6>Your notes</h6>
-//           <p>{notes}</p>
-//         </div>
-//       )}
-
-//       <div className={styles.row}>
-//         <h6>Learn more</h6>
-//         <a
-//           href={`https://en.wikipedia.org/wiki/${cityName}`}
-//           target="_blank"
-//           rel="noreferrer"
-//         >
-//           Check out {cityName} on Wikipedia &rarr;
-//         </a>
-//       </div>
-
-//       <div>
-//         <Button
-//           type="back"
-//           onClick={() => {
-//             navigate(-1);
-//           }}
-//         >
-//           &larr; Back
-//         </Button>{" "}
-//       </div>
-//     </div>
-//   );
-// }
-
-//before deepseek
-// export default City;
-// import { useNavigate, useParams } from "react-router-dom";
-// import { useCities } from "../context/CitiesContext";
-// import { useEffect, useRef, useState } from "react";
-// import Button from "./Button";
-// import Spinner from "./Spinner";
-
-// const formatDate = (date) =>
-//   new Intl.DateTimeFormat("en", {
-//     day: "numeric",
-//     month: "long",
-//     year: "numeric",
-//     weekday: "long",
-//   }).format(new Date(date));
-
-// function City() {
-//   const [isUploading, setIsUploading] = useState(false);
-//   const fileInputRef = useRef(null);
-
-//   const { id } = useParams();
-//   const navigate = useNavigate();
-//   const { currentCity, getCity, isLoading, updateCity } = useCities();
-
-//   // Fix 1: Move this destructuring after the loading check
-//   // const { cityName, emoji, date, notes } = currentCity;
-
-//   useEffect(
-//     function () {
-//       getCity(id);
-//     },
-//     [id, getCity] // Fix 2: Use proper dependency array - id and getCity only
-//   );
-
-//   // async function handleImageUpload(e) {
-//   //   const file = e.target.files[0];
-//   //   if (!file) return;
-
-//   //   setIsUploading(true);
-
-//   //   try {
-//   //     // Client-side only solution: Convert image to base64
-//   //     const reader = new FileReader();
-//   //     reader.readAsDataURL(file);
-
-//   //     reader.onload = async () => {
-//   //       const base64Image = reader.result;
-//   //       // Update city with the base64 image data
-//   //       await updateCity(id, { image: base64Image });
-//   //     };
-
-//   //     reader.onerror = () => {
-//   //       throw new Error("Failed to read image file");
-//   //     };
-//   //   } catch (err) {
-//   //     console.error("Error uploading image:", err);
-//   //     alert("Error uploading image");
-//   //   } finally {
-//   //     setIsUploading(false);
-//   //   }
-//   // }
-//   async function handleImageUpload(e) {
-//     const file = e.target.files[0];
-//     if (!file) return;
-
-//     // Validate image size (e.g., max 5MB)
-//     const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-//     if (file.size > MAX_SIZE) {
-//       alert("Image must be smaller than 5MB");
-//       return;
-//     }
-
-//     setIsUploading(true);
-
-//     try {
-//       // Resize and compress image before conversion
-//       const optimizedImage = await resizeImage(file, {
-//         maxWidth: 400,
-//         maxHeight: 400,
-//         quality: 0.7,
-//         fileType: "image/jpeg",
-//       });
-
-//       const base64Image = await convertToBase64(optimizedImage);
-//       await updateCity(id, { image: base64Image });
-//     } catch (err) {
-//       console.error("Error processing image:", err);
-//       alert("Error processing image");
-//     } finally {
-//       setIsUploading(false);
-//     }
-//   }
-
-//   // Helper function to resize images
-//   function resizeImage(file, options) {
-//     return new Promise((resolve) => {
-//       const reader = new FileReader();
-//       reader.onload = (event) => {
-//         const img = new Image();
-//         img.src = event.target.result;
-
-//         img.onload = () => {
-//           const canvas = document.createElement("canvas");
-//           let width = img.width;
-//           let height = img.height;
-
-//           // Calculate new dimensions while maintaining aspect ratio
-//           if (width > options.maxWidth) {
-//             height *= options.maxWidth / width;
-//             width = options.maxWidth;
-//           }
-//           if (height > options.maxHeight) {
-//             width *= options.maxHeight / height;
-//             height = options.maxHeight;
-//           }
-
-//           canvas.width = width;
-//           canvas.height = height;
-
-//           const ctx = canvas.getContext("2d");
-//           ctx.drawImage(img, 0, 0, width, height);
-
-//           canvas.toBlob(
-//             (blob) => resolve(blob),
-//             options.fileType,
-//             options.quality
-//           );
-//         };
-//       };
-//       reader.readAsDataURL(file);
-//     });
-//   }
-
-//   // Helper function to convert to Base64
-//   function convertToBase64(blob) {
-//     return new Promise((resolve, reject) => {
-//       const reader = new FileReader();
-//       reader.onload = () => resolve(reader.result);
-//       reader.onerror = reject;
-//       reader.readAsDataURL(blob);
-//     });
-//   }
-
-//   async function handleDeleteImage() {
-//     if (!window.confirm("Are you sure you want to delete this image?")) return;
-
-//     try {
-//       await updateCity(id, { image: null });
-//     } catch (err) {
-//       console.error("Error deleting image:", err);
-//       alert("Error deleting image");
-//     }
-//   }
-
-//   // Fix 3: Check for loading state first
-//   if (isLoading) return <Spinner />;
-
-//   // Fix 4: Check if currentCity has data before rendering content
-//   if (!currentCity || Object.keys(currentCity).length === 0) {
-//     return <Spinner />;
-//   }
-
-//   // Fix 5: Only destructure after we've checked currentCity exists
-//   const { cityName, emoji, date, notes, image } = currentCity;
-
-//   return (
-//     <div className="p-8 max-h-[70%] bg-dark-2 rounded-lg overflow-auto w-full flex flex-col gap-8 scrollbar-thin scrollbar-thumb-brand-2 scrollbar-track-dark-1">
-//       <div className="flex flex-col gap-2">
-//         <h6 className="uppercase text-xs font-extrabold text-light-1">
-//           City name
-//         </h6>
-//         <h3 className="text-2xl md:text-3xl flex items-center gap-4">
-//           <div className="flex items-center gap-2">
-//             {emoji && (
-//               <img
-//                 src={`https://flagcdn.com/24x18/${emoji.toLowerCase()}.png`}
-//                 alt={`Flag of ${emoji.toUpperCase()}`}
-//                 className="inline-block align-middle"
-//                 style={{ width: "24px", height: "18px", marginRight: "0.5rem" }}
-//               />
-//             )}
-//             <span className="text-3xl md:text-4xl font-bold leading-none">
-//               {cityName}
-//             </span>
-//           </div>
-//         </h3>
-//       </div>
-//       <div className="flex flex-col gap-2">
-//         <h6 className="uppercase text-xs font-extrabold text-light-1">
-//           You went to {cityName} on
-//         </h6>
-//         <p className="text-base md:text-lg">{formatDate(date || null)}</p>
-//       </div>
-//       {notes && (
-//         <div className="flex flex-col gap-2">
-//           <h6 className="uppercase text-xs font-extrabold text-light-1">
-//             Your notes
-//           </h6>
-//           <p className="text-base md:text-lg">{notes}</p>
-//         </div>
-//       )}
-//       <div className="flex flex-col gap-2">
-//         <h6 className="uppercase text-xs font-extrabold text-light-1">
-//           Snapshot
-//         </h6>
-//         {image ? (
-//           <div className="relative w-full rounded-lg overflow-hidden flex flex-col gap-4 items-center">
-//             <img
-//               src={image}
-//               alt={`${cityName}`}
-//               className="w-full h-auto rounded-lg object-cover max-h-[30rem]"
-//             />
-//             <button
-//               onClick={() => fileInputRef.current.click()}
-//               className="bg-dark-1 text-light-2 border border-dark-0 px-4 py-2 rounded font-semibold uppercase transition-all min-w-[10rem] hover:bg-dark-0 focus:bg-dark-0"
-//             >
-//               Change Image
-//             </button>
-//             <button
-//               onClick={handleDeleteImage}
-//               className="bg-red-600 border border-red-800 text-white px-4 py-2 rounded font-semibold uppercase transition-all min-w-[10rem] hover:bg-red-800 focus:bg-red-800"
-//             >
-//               Delete Image
-//             </button>
-//           </div>
-//         ) : (
-//           <div className="flex justify-center p-4 w-full">
-//             <input
-//               type="file"
-//               id="cityImage"
-//               ref={fileInputRef}
-//               accept="image/*"
-//               onChange={handleImageUpload}
-//               disabled={isUploading}
-//               style={{ display: "none" }}
-//             />
-//             <button
-//               onClick={() => fileInputRef.current.click()}
-//               className="bg-brand-2 text-dark-0 px-6 py-2 rounded-lg font-bold uppercase transition-all min-w-[15rem] hover:bg-green-600 focus:bg-green-600 disabled:bg-dark-0 disabled:text-light-1"
-//               disabled={isUploading}
-//             >
-//               {isUploading ? "Uploading..." : "Upload a memory"}
-//             </button>
-//           </div>
-//         )}
-//       </div>
-//       <div className="flex flex-col gap-2">
-//         <h6 className="uppercase text-xs font-extrabold text-light-1">
-//           Learn more
-//         </h6>
-//         <a
-//           href={`https://en.wikipedia.org/wiki/${cityName}`}
-//           target="_blank"
-//           rel="noreferrer"
-//           className="text-base md:text-lg text-brand-1 font-semibold inline-flex items-center gap-2 transition-colors hover:text-brand-2 hover:underline focus:underline focus:text-brand-2"
-//         >
-//           Check out {cityName} on Wikipedia &rarr;
-//         </a>
-//       </div>
-//       <div>
-//         <Button
-//           type="back"
-//           onClick={() => {
-//             navigate(-1);
-//           }}
-//         >
-//           &larr; Back
-//         </Button>
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default City;
-
-//afterDeep
-// export default City;
-import { useNavigate, useParams } from "react-router-dom";
-import { useCities } from "../context/CitiesContext";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
+import { useCities } from "../context/CitiesContext";
 import Spinner from "./Spinner";
 
 const formatDate = (date: string | null) =>
@@ -380,14 +19,9 @@ interface ResizeOptions {
   fileType: string;
 }
 
-/**
- * Shrinks a picked image through a canvas, so the base64 written to the
- * database stays well under the size the rules allow.
- */
 function resizeImage(file: File, options: ResizeOptions): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-
     reader.onerror = () => reject(new Error("Could not read that image."));
     reader.onload = (event) => {
       const source = event.target?.result;
@@ -396,11 +30,11 @@ function resizeImage(file: File, options: ResizeOptions): Promise<Blob> {
         return;
       }
 
-      const img = new Image();
-      img.onerror = () => reject(new Error("That file is not an image."));
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
+      const image = new Image();
+      image.onerror = () => reject(new Error("That file is not an image."));
+      image.onload = () => {
+        let width = image.width;
+        let height = image.height;
 
         if (width > options.maxWidth) {
           height *= options.maxWidth / width;
@@ -414,14 +48,13 @@ function resizeImage(file: File, options: ResizeOptions): Promise<Blob> {
         const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
+        const context = canvas.getContext("2d");
+        if (!context) {
           reject(new Error("Canvas is unavailable in this browser."));
           return;
         }
 
-        ctx.drawImage(img, 0, 0, width, height);
+        context.drawImage(image, 0, 0, width, height);
         canvas.toBlob(
           (blob) =>
             blob ? resolve(blob) : reject(new Error("Could not encode image.")),
@@ -429,10 +62,8 @@ function resizeImage(file: File, options: ResizeOptions): Promise<Blob> {
           options.quality
         );
       };
-
-      img.src = source;
+      image.src = source;
     };
-
     reader.readAsDataURL(file);
   });
 }
@@ -452,7 +83,6 @@ function convertToBase64(blob: Blob): Promise<string> {
 function City() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentCity, getCity, isLoading, updateCity } = useCities();
@@ -461,18 +91,16 @@ function City() {
     if (id) getCity(id);
   }, [id, getCity]);
 
-  async function handleImageUpload(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  async function uploadMemory(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
     if (!file || !id) return;
 
-    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-    if (file.size > MAX_SIZE) {
+    if (file.size > 5 * 1024 * 1024) {
       alert("Image must be smaller than 5MB");
       return;
     }
 
     setIsUploading(true);
-
     try {
       const optimizedImage = await resizeImage(file, {
         maxWidth: 400,
@@ -480,272 +108,163 @@ function City() {
         quality: 0.7,
         fileType: "image/jpeg",
       });
-
-      const base64Image = await convertToBase64(optimizedImage);
-      await updateCity(id, { image: base64Image });
-    } catch (err) {
-      console.error("Error processing image:", err);
+      await updateCity(id, { image: await convertToBase64(optimizedImage) });
+    } catch (error) {
+      console.error("Error processing image:", error);
       alert("Error processing image");
     } finally {
       setIsUploading(false);
     }
   }
 
-  async function handleDeleteImage() {
-    if (!id) return;
-    if (!window.confirm("Are you sure you want to delete this image?")) return;
+  async function deleteMemory() {
+    if (!id || !window.confirm("Are you sure you want to delete this image?")) {
+      return;
+    }
 
     try {
       await updateCity(id, { image: null });
-    } catch (err) {
-      console.error("Error deleting image:", err);
+    } catch (error) {
+      console.error("Error deleting image:", error);
       alert("Error deleting image");
     }
   }
 
-  if (isLoading) return <Spinner />;
-
-  if (!currentCity) return <Spinner />;
+  if (isLoading || !currentCity) return <Spinner />;
 
   const { cityName, emoji, date, notes, image } = currentCity;
 
   return (
-    <div className="w-full max-w-4xl mx-auto font-manrope">
-      {/* Header Section */}
-      <div
-        className="bg-gradient-to-br from-dark-2 to-dark-1 rounded-2xl 
-                     shadow-2xl border border-dark-2/50 overflow-hidden"
-      >
-        {/* City Header */}
-        <div
-          className="bg-gradient-to-r from-brand-1/10 to-brand-2/10 
-                       px-6 py-8 sm:px-8 sm:py-10 md:px-10 md:py-12 
-                       border-b border-dark-2/30"
-        >
-          <div className="flex flex-col gap-6">
-            {/* City Name Section */}
+    <article className="w-full min-w-0 max-w-4xl mx-auto font-manrope">
+      <div className="overflow-hidden rounded-xl border border-dark-2/50 bg-gradient-to-br from-dark-2 to-dark-1 shadow-2xl sm:rounded-2xl">
+        <header className="border-b border-dark-2/30 bg-gradient-to-r from-brand-1/10 to-brand-2/10 px-4 py-5 sm:px-8 sm:py-10 md:px-10 md:py-12">
+          <div className="flex flex-col gap-5 sm:gap-6">
             <div className="flex flex-col gap-3">
-              <h6
-                className="uppercase text-xs sm:text-sm font-extrabold 
-                           text-light-1 tracking-wider"
-              >
+              <h2 className="text-xs font-extrabold uppercase tracking-wider text-light-1 sm:text-sm">
                 City name
-              </h6>
-              <div className="flex items-center gap-4 flex-wrap">
-                {/* Flag */}
-                <div
-                  className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 
-                               bg-gradient-to-br from-light-2/10 to-light-2/5 
-                               rounded-xl border border-light-2/20 
-                               flex items-center justify-center shadow-lg"
-                >
+              </h2>
+              <div className="flex min-w-0 flex-wrap items-center gap-3 sm:gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-light-2/20 bg-gradient-to-br from-light-2/10 to-light-2/5 shadow-lg sm:h-16 sm:w-16">
                   <img
                     src={`https://flagcdn.com/48x36/${emoji.toLowerCase()}.png`}
                     alt={`Flag of ${emoji.toUpperCase()}`}
-                    className="w-8 h-6 sm:w-10 sm:h-8 object-cover rounded shadow-sm"
-                    onError={(e) => {
-                      // Fall back to the emoji span right after the flag image.
-                      const image = e.currentTarget;
-                      image.style.display = "none";
-                      const fallback = image.nextElementSibling;
-                      if (fallback instanceof HTMLElement)
-                        fallback.style.display = "inline";
+                    className="h-6 w-8 rounded object-cover shadow-sm sm:h-8 sm:w-10"
+                    onError={(event) => {
+                      const flag = event.currentTarget;
+                      flag.style.display = "none";
+                      const fallback = flag.nextElementSibling;
+                      if (fallback instanceof HTMLElement) fallback.style.display = "inline";
                     }}
                   />
-                  <span className="text-2xl sm:text-3xl hidden">{emoji}</span>
+                  <span className="hidden text-2xl sm:text-3xl">{emoji}</span>
                 </div>
-
-                {/* City Name */}
-                <h1
-                  className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl 
-                              font-bold text-light-2 leading-tight"
-                >
+                <h1 className="min-w-0 break-words text-2xl font-bold leading-tight text-light-2 sm:text-3xl md:text-4xl lg:text-5xl">
                   {cityName}
                 </h1>
               </div>
             </div>
-
-            {/* Visit Date */}
-            <div className="flex flex-col gap-3">
-              <h6
-                className="uppercase text-xs sm:text-sm font-extrabold 
-                           text-light-1 tracking-wider"
-              >
+            <div className="flex flex-col gap-2 sm:gap-3">
+              <h2 className="text-xs font-extrabold uppercase tracking-wider text-light-1 sm:text-sm">
                 You went to {cityName} on
-              </h6>
-              <p className="text-base sm:text-lg md:text-xl text-light-2 font-medium">
+              </h2>
+              <p className="text-base font-medium text-light-2 sm:text-lg md:text-xl">
                 {formatDate(date)}
               </p>
             </div>
           </div>
-        </div>
+        </header>
 
-        {/* Content Section */}
-        <div className="p-6 sm:p-8 md:p-10 space-y-8 sm:space-y-10">
-          {/* Notes Section */}
+        <div className="space-y-6 p-4 sm:space-y-10 sm:p-8 md:p-10">
           {notes && (
-            <div className="bg-dark-2/50 rounded-xl p-6 border border-dark-2/30">
-              <h6
-                className="uppercase text-xs sm:text-sm font-extrabold 
-                           text-light-1 tracking-wider mb-4"
-              >
+            <section className="rounded-xl border border-dark-2/30 bg-dark-2/50 p-4 sm:p-6">
+              <h2 className="mb-3 text-xs font-extrabold uppercase tracking-wider text-light-1 sm:mb-4 sm:text-sm">
                 Your notes
-              </h6>
-              <div className="bg-dark-1/30 rounded-lg p-4 border-l-4 border-brand-2">
-                <p
-                  className="text-sm sm:text-base md:text-lg text-light-2 
-                             leading-relaxed whitespace-pre-wrap"
-                >
+              </h2>
+              <div className="rounded-lg border-l-4 border-brand-2 bg-dark-1/30 p-3 sm:p-4">
+                <p className="break-words whitespace-pre-wrap text-sm leading-relaxed text-light-2 sm:text-base md:text-lg">
                   {notes}
                 </p>
               </div>
-            </div>
+            </section>
           )}
 
-          {/* Image/Snapshot Section */}
-          <div className="space-y-4">
-            <h6
-              className="uppercase text-xs sm:text-sm font-extrabold 
-                         text-light-1 tracking-wider"
-            >
-              Memory Snapshot
-            </h6>
-
+          <section className="space-y-4">
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-light-1 sm:text-sm">
+              Memories
+            </h2>
             {image ? (
-              <div className="space-y-6">
-                {/* Image Display */}
-                <div
-                  className="relative rounded-xl overflow-hidden 
-                               shadow-2xl border border-dark-2/30"
-                >
+              <div className="space-y-4 sm:space-y-6">
+                <div className="relative overflow-hidden rounded-xl border border-dark-2/30 shadow-2xl">
                   <img
                     src={image}
                     alt={`Memory from ${cityName}`}
-                    className="w-full h-auto max-h-96 object-cover"
+                    className="h-auto max-h-96 w-full object-cover"
                   />
-                  <div
-                    className="absolute inset-0 bg-gradient-to-t 
-                                 from-dark-0/20 to-transparent"
-                  ></div>
                 </div>
-
-                {/* Image Controls */}
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex-1 bg-gradient-to-r from-brand-2 to-brand-2/90 
-                             text-dark-0 px-6 py-3 rounded-xl font-bold 
-                             uppercase transition-all duration-300 
-                             hover:from-brand-2/90 hover:to-brand-2 
-                             hover:scale-105 hover:shadow-lg hover:shadow-brand-2/20
-                             focus:outline-none focus:ring-2 focus:ring-brand-2
-                             text-sm sm:text-base"
+                    className="min-h-11 flex-1 rounded-xl bg-gradient-to-r from-brand-2 to-brand-2/90 px-6 py-3 text-sm font-bold uppercase text-dark-0 transition-all hover:from-brand-2/90 hover:to-brand-2 focus:outline-none focus:ring-2 focus:ring-brand-2 sm:text-base"
                   >
                     Change Image
                   </button>
                   <button
-                    onClick={handleDeleteImage}
-                    className="flex-1 bg-gradient-to-r from-red-600 to-red-700 
-                             text-white px-6 py-3 rounded-xl font-bold 
-                             uppercase transition-all duration-300 
-                             hover:from-red-700 hover:to-red-800 
-                             hover:scale-105 hover:shadow-lg hover:shadow-red-500/20
-                             focus:outline-none focus:ring-2 focus:ring-red-500
-                             text-sm sm:text-base"
+                    onClick={deleteMemory}
+                    className="min-h-11 flex-1 rounded-xl bg-gradient-to-r from-red-600 to-red-700 px-6 py-3 text-sm font-bold uppercase text-white transition-all hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 sm:text-base"
                   >
                     Delete Image
                   </button>
                 </div>
               </div>
             ) : (
-              <div
-                className="border-2 border-dashed border-dark-2/50 
-                             rounded-xl p-8 sm:p-12 text-center
-                             bg-gradient-to-br from-dark-2/20 to-dark-1/20"
-              >
+              <div className="rounded-xl border-2 border-dashed border-dark-2/50 bg-gradient-to-br from-dark-2/20 to-dark-1/20 p-5 text-center sm:p-12">
                 <div className="space-y-4">
-                  <div className="text-4xl sm:text-5xl opacity-50">📸</div>
-                  <p className="text-light-1/70 text-sm sm:text-base mb-6">
+                  <p className="text-sm text-light-1/70 sm:text-base">
                     No memory uploaded yet. Add a photo to remember this moment!
                   </p>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
-                    className="bg-gradient-to-r from-brand-2 to-brand-1 
-                             text-dark-0 px-8 py-4 rounded-xl font-bold 
-                             uppercase transition-all duration-300 
-                             hover:from-brand-1 hover:to-brand-2 
-                             hover:scale-105 hover:shadow-lg hover:shadow-brand-2/20
-                             focus:outline-none focus:ring-2 focus:ring-brand-2
-                             disabled:opacity-50 disabled:cursor-not-allowed
-                             disabled:hover:scale-100 disabled:hover:shadow-none
-                             text-sm sm:text-base min-w-48"
+                    className="min-h-11 w-full rounded-xl bg-gradient-to-r from-brand-2 to-brand-1 px-6 py-3 text-sm font-bold uppercase text-dark-0 transition-all hover:from-brand-1 hover:to-brand-2 focus:outline-none focus:ring-2 focus:ring-brand-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:text-base"
                   >
-                    {isUploading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <div
-                          className="w-4 h-4 border-2 border-dark-0/30 
-                                       border-t-dark-0 rounded-full animate-spin"
-                        ></div>
-                        Uploading...
-                      </span>
-                    ) : (
-                      "Upload a Memory"
-                    )}
+                    {isUploading ? "Uploading..." : "Upload a Memory"}
                   </button>
                 </div>
               </div>
             )}
-
-            {/* Hidden file input */}
             <input
               type="file"
               ref={fileInputRef}
               accept="image/*"
-              onChange={handleImageUpload}
+              onChange={uploadMemory}
               disabled={isUploading}
               className="hidden"
             />
-          </div>
+          </section>
 
-          {/* Wikipedia Link */}
-          <div className="bg-dark-2/30 rounded-xl p-6 border border-dark-2/30">
-            <h6
-              className="uppercase text-xs sm:text-sm font-extrabold 
-                         text-light-1 tracking-wider mb-4"
-            >
+          <section className="rounded-xl border border-dark-2/30 bg-dark-2/30 p-4 sm:p-6">
+            <h2 className="mb-3 text-xs font-extrabold uppercase tracking-wider text-light-1 sm:mb-4 sm:text-sm">
               Learn more
-            </h6>
+            </h2>
             <a
               href={`https://en.wikipedia.org/wiki/${cityName}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-3 text-base sm:text-lg 
-                       text-brand-1 font-semibold transition-all duration-300 
-                       hover:text-brand-2 hover:gap-4 group"
+              className="inline-flex break-words text-base font-semibold text-brand-1 hover:text-brand-2 hover:underline focus:text-brand-2 focus:underline sm:text-lg"
             >
-              <span>Check out {cityName} on Wikipedia</span>
-              <span
-                className="transition-transform duration-300 
-                             group-hover:translate-x-1"
-              >
-                &rarr;
-              </span>
+              Check out {cityName} on Wikipedia &rarr;
             </a>
-          </div>
+          </section>
 
-          {/* Back Button */}
-          <div className="p-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="bg-dark-1 hover:bg-brand-2 text-light-2 hover:text-dark-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 border border-brand-1/60 hover:border-brand-2 shadow-md"
-            >
-              &larr; Back
-            </button>
-          </div>
+          <button
+            onClick={() => navigate(-1)}
+            className="min-h-11 rounded-xl border border-brand-1/60 bg-dark-1 px-6 py-3 font-semibold text-light-2 transition-colors hover:border-brand-2 hover:bg-brand-2 hover:text-dark-1 focus:outline-none focus:ring-2 focus:ring-brand-2"
+          >
+            &larr; Back
+          </button>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
