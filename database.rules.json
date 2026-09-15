@@ -31,7 +31,7 @@
           ".write": "auth != null && root.child('sessions/' + auth.uid + '/username').val() === $username",
 
           "$cityId": {
-            ".validate": "newData.hasChildren(['cityName', 'position'])",
+            ".validate": "newData.hasChildren(['cityName', 'position']) && (!newData.child('image').exists() || !newData.child('memories').exists())",
 
             "cityName": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120"
@@ -40,8 +40,9 @@
             "emoji": { ".validate": "newData.isString() && newData.val().length <= 16" },
             "date": { ".validate": "newData.isString() && newData.val().length <= 40" },
             "notes": { ".validate": "newData.isString() && newData.val().length <= 2000" },
-            "image": { ".validate": "newData.isString() && newData.val().length <= 2000000" },
+            "image": { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 2000000)" },
             "memories": {
+              ".validate": "!newData.exists() || newData.numChildren() <= 5",
               "$memoryId": {
                 ".validate": "newData.isString() && newData.val().length <= 2000000"
               }
