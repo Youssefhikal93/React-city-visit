@@ -10,6 +10,8 @@ export type FakeCitiesService = Pick<
   | "createCity"
   | "updateCity"
   | "deleteCity"
+  | "addMemory"
+  | "deleteMemory"
 >;
 
 const defaultCity: City = {
@@ -19,7 +21,7 @@ const defaultCity: City = {
   emoji: "se",
   date: "2024-01-01T00:00:00.000Z",
   notes: "",
-  image: null,
+  memories: [],
   createdAt: 1,
   position: { lat: 59.3293, lng: 18.0686 },
 };
@@ -45,7 +47,11 @@ function sortCities(cities: City[]): City[] {
 }
 
 function copyCity(city: City): City {
-  return { ...city, position: { ...city.position } };
+  return {
+    ...city,
+    position: { ...city.position },
+    memories: city.memories.map((memory) => ({ ...memory })),
+  };
 }
 
 function serializeDate(date: NewCity["date"]): string {
@@ -56,6 +62,7 @@ function serializeDate(date: NewCity["date"]): string {
 export function createFakeCitiesService(seedCities: City[] = []): FakeCitiesService {
   let cities = sortCities(seedCities.map(copyCity));
   let nextId = 1;
+  let nextMemoryId = 1;
   const listeners = new Set<CitiesListener>();
 
   function notifyListeners() {
@@ -96,7 +103,7 @@ export function createFakeCitiesService(seedCities: City[] = []): FakeCitiesServ
         emoji: newCity.emoji,
         date: serializeDate(newCity.date),
         notes: newCity.notes,
-        image: null,
+        memories: [],
         createdAt: Math.max(0, ...cities.map((city) => city.createdAt)) + 1,
         position: {
           lat: Number(newCity.position.lat),
@@ -117,6 +124,30 @@ export function createFakeCitiesService(seedCities: City[] = []): FakeCitiesServ
     async deleteCity(_username, id) {
       cityById(id);
       cities = cities.filter((city) => city.id !== id);
+      notifyListeners();
+    },
+    async addMemory(_username, id, dataUri) {
+      const city = cityById(id);
+      const memoryId = `memory-${nextMemoryId}`;
+      nextMemoryId += 1;
+      const updatedCity = {
+        ...city,
+        memories: [...city.memories, { id: memoryId, dataUri }],
+      };
+      cities = cities.map((savedCity) =>
+        savedCity.id === id ? updatedCity : savedCity
+      );
+      notifyListeners();
+    },
+    async deleteMemory(_username, id, memoryId) {
+      const city = cityById(id);
+      const updatedCity = {
+        ...city,
+        memories: city.memories.filter((memory) => memory.id !== memoryId),
+      };
+      cities = cities.map((savedCity) =>
+        savedCity.id === id ? updatedCity : savedCity
+      );
       notifyListeners();
     },
   };

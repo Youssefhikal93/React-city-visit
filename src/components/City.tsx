@@ -2,7 +2,12 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { useCities } from "../context/CitiesContext";
+import type { Memory } from "../types";
+import { fitWithinLongSide } from "./memoryDimensions";
 import Spinner from "./Spinner";
+
+const MAX_MEMORIES = 5;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const formatDate = (date: string | null) =>
   new window.Intl.DateTimeFormat("en", {
@@ -12,54 +17,38 @@ const formatDate = (date: string | null) =>
     weekday: "long",
   }).format(new Date(date ?? Date.now()));
 
-interface ResizeOptions {
-  maxWidth: number;
-  maxHeight: number;
-  quality: number;
-  fileType: string;
-}
-
-function resizeImage(file: File, options: ResizeOptions): Promise<Blob> {
+function resizeImage(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Could not read that image."));
+    reader.onerror = () => reject(new Error("Could not read that Memory."));
     reader.onload = (event) => {
       const source = event.target?.result;
       if (typeof source !== "string") {
-        reject(new Error("Could not read that image."));
+        reject(new Error("Could not read that Memory."));
         return;
       }
 
       const image = new Image();
       image.onerror = () => reject(new Error("That file is not an image."));
       image.onload = () => {
-        let width = image.width;
-        let height = image.height;
-
-        if (width > options.maxWidth) {
-          height *= options.maxWidth / width;
-          width = options.maxWidth;
-        }
-        if (height > options.maxHeight) {
-          width *= options.maxHeight / height;
-          height = options.maxHeight;
-        }
-
+        const dimensions = fitWithinLongSide(image.width, image.height, 800);
         const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = dimensions.width;
+        canvas.height = dimensions.height;
         const context = canvas.getContext("2d");
         if (!context) {
           reject(new Error("Canvas is unavailable in this browser."));
           return;
         }
 
-        context.drawImage(image, 0, 0, width, height);
+        context.drawImage(image, 0, 0, dimensions.width, dimensions.height);
         canvas.toBlob(
           (blob) =>
-            blob ? resolve(blob) : reject(new Error("Could not encode image.")),
-          options.fileType,
-          options.quality
+            blob
+              ? resolve(blob)
+              : reject(new Error("Could not encode that Memory.")),
+          "image/jpeg",
+          0.75
         );
       };
       image.src = source;
@@ -73,66 +62,92 @@ function convertToBase64(blob: Blob): Promise<string> {
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") resolve(reader.result);
-      else reject(new Error("Could not encode image."));
+      else reject(new Error("Could not encode that Memory."));
     };
-    reader.onerror = () => reject(new Error("Could not encode image."));
+    reader.onerror = () => reject(new Error("Could not encode that Memory."));
     reader.readAsDataURL(blob);
   });
 }
 
 function City() {
-  const [isUploading, setIsUploading] = useState(false);
+  const [isAddingMemory, setIsAddingMemory] = useState(false);
+  const [memoryError, setMemoryError] = useState("");
+  const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { id } = useParams();
   const navigate = useNavigate();
-  const { currentCity, getCity, isLoading, updateCity } = useCities();
+  const { currentCity, getCity, isLoading, addMemory, deleteMemory } = useCities();
 
   useEffect(() => {
     if (id) getCity(id);
   }, [id, getCity]);
 
+  const memories = currentCity?.memories;
+
+  useEffect(() => {
+    if (
+      selectedMemory &&
+      !memories?.some((memory) => memory.id === selectedMemory.id)
+    ) {
+      setSelectedMemory(null);
+    }
+  }, [memories, selectedMemory]);
+
+  useEffect(() => {
+    if (!selectedMemory) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setSelectedMemory(null);
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedMemory]);
+
   async function uploadMemory(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (!file || !id) return;
+    event.target.value = "";
+    if (!file || !id || isAddingMemory) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be smaller than 5MB");
+    setMemoryError("");
+    if (!file.type.startsWith("image/")) {
+      setMemoryError("Choose an image file for this Memory.");
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setMemoryError("That Memory must be 10MB or smaller.");
       return;
     }
 
-    setIsUploading(true);
+    setIsAddingMemory(true);
     try {
-      const optimizedImage = await resizeImage(file, {
-        maxWidth: 400,
-        maxHeight: 400,
-        quality: 0.7,
-        fileType: "image/jpeg",
-      });
-      await updateCity(id, { image: await convertToBase64(optimizedImage) });
+      const optimizedMemory = await resizeImage(file);
+      await addMemory(id, await convertToBase64(optimizedMemory));
     } catch (error) {
-      console.error("Error processing image:", error);
-      alert("Error processing image");
+      console.error("Error adding Memory:", error);
+      setMemoryError("Couldn't add that Memory. Please try again.");
     } finally {
-      setIsUploading(false);
+      setIsAddingMemory(false);
     }
   }
 
-  async function deleteMemory() {
-    if (!id || !window.confirm("Are you sure you want to delete this image?")) {
-      return;
-    }
+  async function removeMemory(memory: Memory) {
+    if (!id || !window.confirm("Delete this Memory?")) return;
 
+    setMemoryError("");
     try {
-      await updateCity(id, { image: null });
+      await deleteMemory(id, memory.id);
     } catch (error) {
-      console.error("Error deleting image:", error);
-      alert("Error deleting image");
+      console.error("Error deleting Memory:", error);
+      setMemoryError("Couldn't delete that Memory. Please try again.");
     }
   }
 
   if (isLoading || !currentCity) return <Spinner />;
 
-  const { cityName, emoji, date, notes, image } = currentCity;
+  const { cityName, emoji, date, notes } = currentCity;
+  const cityMemories = memories ?? [];
+  const cannotAddMemory = cityMemories.length >= MAX_MEMORIES;
 
   return (
     <article className="w-full min-w-0 max-w-4xl mx-auto font-manrope">
@@ -188,56 +203,75 @@ function City() {
             </section>
           )}
 
-          <section className="space-y-4">
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-light-1 sm:text-sm">
+          <section className="space-y-4" aria-labelledby="memories-heading">
+            <h2 id="memories-heading" className="text-xs font-extrabold uppercase tracking-wider text-light-1 sm:text-sm">
               Memories
             </h2>
-            {image ? (
-              <div className="space-y-4 sm:space-y-6">
-                <div className="relative overflow-hidden rounded-xl border border-dark-2/30 shadow-2xl">
-                  <img
-                    src={image}
-                    alt={`Memory from ${cityName}`}
-                    className="h-auto max-h-96 w-full object-cover"
-                  />
-                </div>
-                <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="min-h-11 flex-1 rounded-xl bg-gradient-to-r from-brand-2 to-brand-2/90 px-6 py-3 text-sm font-bold uppercase text-dark-0 transition-all hover:from-brand-2/90 hover:to-brand-2 focus:outline-none focus:ring-2 focus:ring-brand-2 sm:text-base"
-                  >
-                    Change Image
-                  </button>
-                  <button
-                    onClick={deleteMemory}
-                    className="min-h-11 flex-1 rounded-xl bg-gradient-to-r from-red-600 to-red-700 px-6 py-3 text-sm font-bold uppercase text-white transition-all hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 sm:text-base"
-                  >
-                    Delete Image
-                  </button>
-                </div>
+            {cityMemories.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+                {cityMemories.map((memory, index) => (
+                  <div key={memory.id} className="relative overflow-hidden rounded-xl border border-dark-2/30 bg-dark-2/40 shadow-lg">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMemory(memory)}
+                      aria-label={`View Memory ${index + 1}`}
+                      className="block aspect-square w-full focus:outline-none focus:ring-2 focus:ring-brand-2"
+                    >
+                      <img
+                        src={memory.dataUri}
+                        alt={`Memory ${index + 1} from ${cityName}`}
+                        className="h-full w-full object-cover"
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeMemory(memory)}
+                      aria-label={`Delete Memory ${index + 1}`}
+                      className="absolute right-2 top-2 min-h-9 rounded-lg bg-red-700 px-3 text-xs font-bold uppercase text-white shadow-lg transition-colors hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className="rounded-xl border-2 border-dashed border-dark-2/50 bg-gradient-to-br from-dark-2/20 to-dark-1/20 p-5 text-center sm:p-12">
-                <div className="space-y-4">
-                  <p className="text-sm text-light-1/70 sm:text-base">
-                    No memory uploaded yet. Add a photo to remember this moment!
-                  </p>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="min-h-11 w-full rounded-xl bg-gradient-to-r from-brand-2 to-brand-1 px-6 py-3 text-sm font-bold uppercase text-dark-0 transition-all hover:from-brand-1 hover:to-brand-2 focus:outline-none focus:ring-2 focus:ring-brand-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:text-base"
-                  >
-                    {isUploading ? "Uploading..." : "Upload a Memory"}
-                  </button>
-                </div>
-              </div>
+              <p className="rounded-xl border-2 border-dashed border-dark-2/50 bg-dark-2/20 p-5 text-center text-sm text-light-1/70 sm:p-8 sm:text-base">
+                No Memories yet. Add a photo to remember this City.
+              </p>
+            )}
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isAddingMemory || cannotAddMemory}
+                className="min-h-11 rounded-xl bg-gradient-to-r from-brand-2 to-brand-1 px-6 py-3 text-sm font-bold uppercase text-dark-0 transition-all hover:from-brand-1 hover:to-brand-2 focus:outline-none focus:ring-2 focus:ring-brand-2 disabled:cursor-not-allowed disabled:opacity-50 sm:text-base"
+              >
+                {isAddingMemory ? "Adding Memory..." : "Add a Memory"}
+              </button>
+              {cannotAddMemory && (
+                <p className="text-sm text-light-1" role="status">
+                  A City can hold up to five Memories.
+                </p>
+              )}
+              {isAddingMemory && (
+                <p className="text-sm text-light-1" role="status">
+                  Preparing your Memory…
+                </p>
+              )}
+            </div>
+            {memoryError && (
+              <p role="alert" className="rounded-lg border border-red-500/60 bg-red-950/40 p-3 text-sm text-red-100">
+                {memoryError}
+              </p>
             )}
             <input
               type="file"
               ref={fileInputRef}
               accept="image/*"
               onChange={uploadMemory}
-              disabled={isUploading}
+              disabled={isAddingMemory || cannotAddMemory}
+              aria-label="Add a Memory"
               className="hidden"
             />
           </section>
@@ -264,6 +298,26 @@ function City() {
           </button>
         </div>
       </div>
+
+      {selectedMemory && (
+        <div role="dialog" aria-modal="true" aria-label="Enlarged Memory" className="fixed inset-0 z-[1000] flex items-center justify-center bg-dark-0/90 p-4">
+          <div className="relative max-h-full max-w-4xl">
+            <img
+              src={selectedMemory.dataUri}
+              alt={`Enlarged Memory from ${cityName}`}
+              className="max-h-[85vh] max-w-full rounded-xl object-contain shadow-2xl"
+            />
+            <button
+              type="button"
+              onClick={() => setSelectedMemory(null)}
+              aria-label="Close enlarged Memory"
+              className="absolute right-2 top-2 min-h-11 rounded-xl bg-dark-0/90 px-4 font-bold text-light-2 shadow-lg focus:outline-none focus:ring-2 focus:ring-brand-2"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </article>
   );
 }

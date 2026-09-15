@@ -41,6 +41,11 @@
             "date": { ".validate": "newData.isString() && newData.val().length <= 40" },
             "notes": { ".validate": "newData.isString() && newData.val().length <= 2000" },
             "image": { ".validate": "newData.isString() && newData.val().length <= 2000000" },
+            "memories": {
+              "$memoryId": {
+                ".validate": "newData.isString() && newData.val().length <= 2000000"
+              }
+            },
             "createdAt": { ".validate": "newData.isNumber()" },
 
             "position": {

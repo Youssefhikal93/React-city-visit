@@ -4,6 +4,12 @@ export interface Position {
   lng: number;
 }
 
+/** One photo attached to a City, identified by its Realtime Database key. */
+export interface Memory {
+  id: string;
+  dataUri: string;
+}
+
 /** A city as the rest of the app consumes it, id included. */
 export interface City {
   id: string;
@@ -13,8 +19,7 @@ export interface City {
   /** ISO 8601 string, or null for rows written before dates were required. */
   date: string | null;
   notes: string;
-  /** Base64 data URI of the memory snapshot, or null when none is set. */
-  image: string | null;
+  memories: Memory[];
   createdAt: number;
   position: Position;
 }
@@ -32,9 +37,9 @@ export interface NewCity {
   position: { lat: number | string; lng: number | string };
 }
 
-/** Partial edit to an existing city; `image: null` clears the snapshot. */
+/** Partial edit to an existing City. */
 export type CityUpdate = Partial<
-  Pick<City, "cityName" | "country" | "emoji" | "date" | "notes" | "image">
+  Pick<City, "cityName" | "country" | "emoji" | "date" | "notes">
 >;
 
 /** The city shape as it actually sits in the Realtime Database. */
@@ -45,6 +50,7 @@ export interface StoredCity {
   date?: string;
   notes?: string;
   image?: string | null;
+  memories?: Record<string, string>;
   createdAt?: number;
   position?: { lat?: number | string; lng?: number | string };
 }
