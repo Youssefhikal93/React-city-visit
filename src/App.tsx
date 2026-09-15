@@ -23,7 +23,7 @@ import CityList from "./components/CityList";
 import CountriesList from "./components/CountriesList";
 import City from "./components/City";
 import Form from "./components/Form";
-import Map from "./components/Map";
+import MapRoute from "./pages/MapRoute";
 import SpinnerFullPage from "./components/SpinnerFullPage";
 
 import Signup from "./pages/SignUp";
@@ -49,7 +49,7 @@ function App() {
                 }
               >
                 <Route index element={<AppIndexRedirect />} />
-                <Route path="map" element={<Map />} />
+                <Route path="map" element={<MapRoute />} />
                 <Route path="cities" element={<CityList />} />
                 <Route path="countries" element={<CountriesList />} />
                 <Route path="cities/:id" element={<City />} />

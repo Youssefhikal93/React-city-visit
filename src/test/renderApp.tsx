@@ -12,7 +12,7 @@ import { CitiesProvider } from "../context/CitiesContext";
 import ProtectedRoute from "../pages/ProtectedRoute";
 import AppIndexRedirect from "../pages/AppIndexRedirect";
 import AppLayout from "../pages/AppLayout";
-import Map from "../components/Map";
+import MapRoute from "../pages/MapRoute";
 import type { City, CityUpdate, NewCity } from "../types";
 import { PHONE_MEDIA_QUERY } from "../hooks/useIsPhone";
 import {
@@ -161,7 +161,7 @@ export function renderApp({
               }
             >
               <Route index element={<AppIndexRedirect />} />
-              <Route path="map" element={<Map />} />
+              <Route path="map" element={<MapRoute />} />
               <Route path="cities" element={<CityList />} />
               <Route path="countries" element={<CountriesList />} />
               <Route path="cities/:id" element={<CityPage />} />
