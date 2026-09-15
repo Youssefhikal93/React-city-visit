@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from "react-router-dom";
+﻿import { Outlet, useLocation } from "react-router-dom";
 
 import BottomBar from "../components/BottomBar";
 import AppNav from "../components/AppNav";
@@ -17,7 +17,7 @@ function AppLayout() {
 
     return (
       <>
-        <div className="h-screen w-screen bg-dark-0 pb-16">
+        <div className="h-screen w-screen bg-dark-0 pb-[calc(4rem+env(safe-area-inset-bottom))]">
           {isMapView ? routedView : <SideBar>{routedView}</SideBar>}
         </div>
         <BottomBar />
@@ -39,3 +39,4 @@ function AppLayout() {
   );
 }
 export default AppLayout;
+
