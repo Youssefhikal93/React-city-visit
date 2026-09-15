@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 
 import {
   DEFAULT_WORLD_VIEW,
@@ -7,7 +7,10 @@ import {
   mapViewForPositions,
   pendingPinNavigationTarget,
   pendingPinReducer,
+  createWorldPlaceSearch,
   searchSavedCities,
+  type WorldPlaceFetch,
+  type WorldPlaceSearchStatus,
 } from "./mapBehaviour";
 import { aCity } from "../test/fakeCitiesService";
 
@@ -156,5 +159,166 @@ describe("saved City search", () => {
 
   test("returns nothing when no saved City matches", () => {
     expect(searchSavedCities(cities, "Tokyo")).toEqual([]);
+  });
+});
+
+function nominatimResponse(payload: unknown, ok = true) {
+  return { ok, json: async () => payload };
+}
+
+describe("world place search", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test("rapid queries wait for one pause before starting a lookup", async () => {
+    vi.useFakeTimers();
+    const fetchWorldPlaces = vi.fn<WorldPlaceFetch>().mockResolvedValue(
+      nominatimResponse([])
+    );
+    const search = createWorldPlaceSearch(fetchWorldPlaces, vi.fn());
+
+    search.searchAfterPause("S");
+    search.searchAfterPause("St");
+    search.searchAfterPause("Sto");
+    await vi.advanceTimersByTimeAsync(999);
+    expect(fetchWorldPlaces).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(fetchWorldPlaces).toHaveBeenCalledTimes(1);
+  });
+
+  test("a second lookup waits until one second after the first one", async () => {
+    vi.useFakeTimers();
+    const fetchWorldPlaces = vi.fn<WorldPlaceFetch>().mockResolvedValue(
+      nominatimResponse([])
+    );
+    const search = createWorldPlaceSearch(fetchWorldPlaces, vi.fn());
+
+    search.searchNow("Stockholm");
+    await vi.advanceTimersByTimeAsync(0);
+    search.searchNow("Paris");
+    await vi.advanceTimersByTimeAsync(999);
+    expect(fetchWorldPlaces).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(fetchWorldPlaces).toHaveBeenCalledTimes(2);
+  });
+
+  test("a changed query aborts its lookup and ignores its late response", async () => {
+    vi.useFakeTimers();
+    let resolveFirstLookup: (response: ReturnType<typeof nominatimResponse>) => void =
+      () => undefined;
+    const fetchWorldPlaces = vi
+      .fn<WorldPlaceFetch>()
+      .mockImplementationOnce(
+        (_url, options) =>
+          new Promise((resolve) => {
+            resolveFirstLookup = resolve;
+            expect(options.signal.aborted).toBe(false);
+          })
+      )
+      .mockResolvedValueOnce(
+        nominatimResponse([
+          { display_name: "Paris, France", lat: "48.8566", lon: "2.3522" },
+        ])
+      );
+    const statuses: WorldPlaceSearchStatus[] = [];
+    const search = createWorldPlaceSearch(fetchWorldPlaces, (status) => {
+      statuses.push(status);
+    });
+
+    search.searchNow("Stockholm");
+    await vi.advanceTimersByTimeAsync(0);
+    const firstRequest = fetchWorldPlaces.mock.calls[0][1];
+    search.searchNow("Paris");
+    expect(firstRequest.signal.aborted).toBe(true);
+
+    resolveFirstLookup(
+      nominatimResponse([
+        { display_name: "Stockholm, Sweden", lat: "59.3293", lon: "18.0686" },
+      ])
+    );
+    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    expect(statuses.at(-1)).toEqual({
+      kind: "results",
+      places: [
+        {
+          kind: "worldPlace",
+          displayName: "Paris, France",
+          position: { lat: 48.8566, lng: 2.3522 },
+        },
+      ],
+    });
+  });
+
+  test("maps Nominatim names and string Positions into world places", async () => {
+    vi.useFakeTimers();
+    const fetchWorldPlaces = vi.fn<WorldPlaceFetch>().mockResolvedValue(
+      nominatimResponse([
+        { display_name: "Stockholm, Sweden", lat: "59.3293", lon: "18.0686" },
+      ])
+    );
+    const statuses: WorldPlaceSearchStatus[] = [];
+    const search = createWorldPlaceSearch(fetchWorldPlaces, (status) => {
+      statuses.push(status);
+    });
+
+    search.searchNow("Stockholm");
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(fetchWorldPlaces.mock.calls[0][0]).toContain(
+      "https://nominatim.openstreetmap.org/search?"
+    );
+    expect(fetchWorldPlaces.mock.calls[0][0]).toContain("format=jsonv2");
+    expect(fetchWorldPlaces.mock.calls[0][0]).toContain("q=Stockholm");
+    expect(fetchWorldPlaces.mock.calls[0][0]).toContain("limit=5");
+    expect(statuses.at(-1)).toEqual({
+      kind: "results",
+      places: [
+        {
+          kind: "worldPlace",
+          displayName: "Stockholm, Sweden",
+          position: { lat: 59.3293, lng: 18.0686 },
+        },
+      ],
+    });
+  });
+
+  test("an empty Nominatim response reports no results", async () => {
+    vi.useFakeTimers();
+    const fetchWorldPlaces = vi.fn<WorldPlaceFetch>().mockResolvedValue(
+      nominatimResponse([])
+    );
+    const statuses: WorldPlaceSearchStatus[] = [];
+    const search = createWorldPlaceSearch(fetchWorldPlaces, (status) => {
+      statuses.push(status);
+    });
+
+    search.searchNow("Nothing");
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(statuses.at(-1)).toEqual({ kind: "noResults" });
+  });
+
+  test.each([
+    ["a non-OK response", () => Promise.resolve(nominatimResponse([], false))],
+    ["a rejected request", () => Promise.reject(new Error("Network failed"))],
+  ])("%s reports a lookup failure", async (_scenario, fetchResponse) => {
+    vi.useFakeTimers();
+    const fetchWorldPlaces = vi
+      .fn<WorldPlaceFetch>()
+      .mockImplementation(() => fetchResponse());
+    const statuses: WorldPlaceSearchStatus[] = [];
+    const search = createWorldPlaceSearch(fetchWorldPlaces, (status) => {
+      statuses.push(status);
+    });
+
+    search.searchNow("Stockholm");
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(statuses.at(-1)).toEqual({ kind: "failed" });
   });
 });

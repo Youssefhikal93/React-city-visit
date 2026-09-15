@@ -27,6 +27,7 @@ import {
   pendingPinReducer,
   pendingPinNavigationTarget,
   positionFromQuery,
+  type WorldPlaceSearchResult,
 } from "../map/mapBehaviour";
 import type { City, Position } from "../types";
 import { MapSearch } from "./MapSearch";
@@ -56,6 +57,9 @@ function Map() {
     NO_PENDING_PIN
   );
   const [searchTarget, setSearchTarget] = useState<City | null>(null);
+  const [worldSearchTarget, setWorldSearchTarget] = useState<Position | null>(
+    null
+  );
   const cityMarkers = useRef(new globalThis.Map<string, LeafletMarker>());
   const urlPosition = positionFromQuery(lat, lng);
   const initialCenter = urlPosition ?? DEFAULT_WORLD_VIEW.position;
@@ -80,6 +84,12 @@ function Map() {
 
   function selectSavedCity(city: City): void {
     setSearchTarget(city);
+  }
+
+  function selectWorldPlace(place: WorldPlaceSearchResult): void {
+    clearError();
+    setWorldSearchTarget(place.position);
+    dispatchPendingPin({ type: "searchResultPicked", position: place.position });
   }
 
   return (
@@ -153,10 +163,15 @@ function Map() {
             marker={cityMarkers.current.get(searchTarget.id) ?? null}
           />
         )}
+        {worldSearchTarget && <FlyToWorldSearchResult position={worldSearchTarget} />}
         <DetectClick onTap={handleMapTap} />
       </MapContainer>
 
-      <MapSearch cities={cities} onCityPicked={selectSavedCity} />
+      <MapSearch
+        cities={cities}
+        onCityPicked={selectSavedCity}
+        onWorldPlacePicked={selectWorldPlace}
+      />
 
       <button
         aria-label="Use your Position"
@@ -170,6 +185,19 @@ function Map() {
       </button>
     </div>
   );
+}
+
+function FlyToWorldSearchResult({ position }: { position: Position }) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.flyTo([position.lat, position.lng], map.getZoom(), {
+      animate: true,
+      duration: 1,
+    });
+  }, [map, position]);
+
+  return null;
 }
 
 function FlyToSearchResult({
