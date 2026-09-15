@@ -1,37 +1,66 @@
+import { useId, useState } from "react";
 import { Link } from "react-router-dom";
+import { FiChevronDown, FiMap } from "react-icons/fi";
+import { cityDetailTarget, mapCountryTarget } from "../map/mapBehaviour";
+import type { City, Country } from "../types";
+import VisitCounter from "./VisitCounter";
 
-import { mapCountryTarget } from "../map/mapBehaviour";
-import type { Country } from "../types";
-
-function CountryItem({ country }: { country: Country }) {
+function CountryItem({
+  country,
+  cities,
+}: {
+  country: Country;
+  cities: City[];
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const panelId = useId();
   return (
-    <li>
-      <Link
-        to={mapCountryTarget(country.country)}
-        aria-label={`Show ${country.country} on map`}
-        className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-xl border border-dark-2/50 bg-dark-2 px-4 py-4 text-base font-semibold focus:outline-none focus:ring-2 focus:ring-brand-2"
+    <li className="country-card">
+      <button
+        type="button"
+        className="country-toggle"
+        aria-expanded={isExpanded}
+        aria-controls={panelId}
+        onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-light-2/20 bg-light-2/10">
-          <img
-            src={`https://flagcdn.com/32x24/${country.emoji.toLowerCase()}.png`}
-            alt={`Flag of ${country.country}`}
-            className="h-6 w-8 rounded object-cover"
-            onError={(event) => {
-              const image = event.currentTarget;
-              image.style.display = "none";
-              const fallback = image.nextElementSibling;
-              if (fallback instanceof HTMLElement)
-                fallback.style.display = "block";
-            }}
-          />
-          <span className="hidden text-2xl leading-none">{country.emoji}</span>
+        <img
+          src={"https://flagcdn.com/" + country.emoji.toLowerCase() + ".svg"}
+          alt={"Flag of " + country.country}
+          className="country-flag"
+        />
+        <span className="country-label">
+          <strong>{country.country}</strong>
+          <small>
+            {cities.length} {cities.length === 1 ? "city" : "cities"} visited
+          </small>
+        </span>
+        <FiChevronDown
+          aria-hidden="true"
+          className={isExpanded ? "rotate-180" : ""}
+        />
+      </button>
+      {isExpanded && (
+        <div id={panelId} className="country-cities">
+          <ul>
+            {cities.map((city) => (
+              <li className="country-city" key={city.id}>
+                <Link to={cityDetailTarget(city.id, city.position)}>
+                  {city.cityName}
+                </Link>
+                <VisitCounter city={city} />
+              </li>
+            ))}
+          </ul>
+          <Link
+            className="country-map-link"
+            aria-label={"Show " + country.country + " on map"}
+            to={mapCountryTarget(country.country)}
+          >
+            <FiMap aria-hidden="true" /> Show on map
+          </Link>
         </div>
-        <div className="break-words text-center font-medium leading-tight text-light-2">
-          {country.country}
-        </div>
-      </Link>
+      )}
     </li>
   );
 }
-
 export default CountryItem;

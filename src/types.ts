@@ -19,6 +19,7 @@ export interface City {
   /** ISO 8601 string, or null for rows written before dates were required. */
   date: string | null;
   notes: string;
+  visitCount?: number;
   memories: Memory[];
   createdAt: number;
   position: Position;
@@ -39,7 +40,7 @@ export interface NewCity {
 
 /** Partial edit to an existing City. */
 export type CityUpdate = Partial<
-  Pick<City, "cityName" | "country" | "emoji" | "date" | "notes">
+  Pick<City, "cityName" | "country" | "emoji" | "date" | "notes" | "visitCount">
 >;
 
 /** The city shape as it actually sits in the Realtime Database. */
@@ -49,6 +50,7 @@ export interface StoredCity {
   emoji?: string;
   date?: string;
   notes?: string;
+  visitCount?: number;
   image?: string | null;
   memories?: Record<string, string>;
   createdAt?: number;

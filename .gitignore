@@ -33,3 +33,7 @@ dist
 
 # Firebase CLI
 .firebase
+
+# Local browser verification artifacts
+.playwright-cli/
+output/

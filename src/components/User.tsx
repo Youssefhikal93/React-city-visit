@@ -18,7 +18,7 @@
 //   return (
 //     <div className="absolute top-16 right-16 bg-dark-1 p-4 rounded-lg z-[999] shadow-lg text-lg font-semibold flex items-center gap-6 md:top-4 md:right-4 md:p-2 md:text-base md:gap-2">
 //       {/* <img src={user.avatar} alt={user.name} /> */}
-//       <span>Welcome, {user.email} 👋</span>
+//       <span>Welcome, {user.email} </span>
 //       <button
 //         onClick={handleClick}
 //         className="bg-dark-2 rounded-lg border-none px-3 py-2 text-inherit font-manrope text-xs font-bold uppercase cursor-pointer hover:bg-dark-0"
@@ -76,9 +76,9 @@ function User() {
   if (!user) return null;
 
   return (
-    <div className="absolute top-6 right-1 z-[999] group md:top-4 md:right-4">
+    <div className="relative group">
       {/* Main user card */}
-      <div className="bg-dark-1/95 backdrop-blur-sm border border-dark-2/50 p-2 gap-2 md:p-4 md:gap-4 rounded-2xl shadow-2xl flex items-center gap-4 transition-all duration-300 hover:shadow-brand-1/10 hover:border-brand-1/30">
+      <div className="bg-dark-1/95 backdrop-blur-sm border border-dark-2/50 p-2 gap-2 md:p-3 md:gap-3 rounded-2xl shadow-2xl flex items-center gap-4 transition-all duration-300 hover:shadow-brand-1/10 hover:border-brand-1/30">
         {/* Avatar */}
         <div className="relative">
           <div className="w-8 h-8 md:w-12 md:h-12 bg-gradient-to-br from-brand-1 to-brand-2 rounded-full flex items-center justify-center shadow-lg md:w-10 md:h-10">
@@ -92,8 +92,8 @@ function User() {
 
         {/* User info */}
         <div className="flex-1 min-w-0 hidden md:block ">
-          <div className="text-light-1 font-semibold text-xs md:text-sm truncate">
-            Welcome back! 👋
+          <div className="text-light-1 font-semibold text-xs truncate">
+            Welcome back!
           </div>
           <div className="text-light-0 text-xs md:text-sm truncate opacity-80">
             {user.displayName}

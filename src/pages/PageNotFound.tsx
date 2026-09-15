@@ -1,3 +1,4 @@
+import { FiCompass } from "react-icons/fi";
 // import { Link } from "react-router-dom";
 
 // export default function PageNotFound() {
@@ -6,7 +7,7 @@
 //       <h1 className="text-3xl md:text-5xl mb-8 animate-bounce">
 //         Page not found{" "}
 //         <span className="inline-block text-4xl md:text-6xl animate-shake">
-//           😢
+//
 //         </span>
 //       </h1>
 //       <Link
@@ -34,9 +35,9 @@ export default function PageNotFound() {
           </div>
         </div>
 
-        {/* Floating emoji with animation */}
+        {/* Navigation illustration */}
         <div className="mb-8 relative">
-          <div className="text-6xl animate-bounce inline-block">😢</div>
+          <FiCompass className="text-6xl inline-block" aria-hidden="true" />
           <div className="absolute -top-2 -right-2 w-4 h-4 bg-brand-2 rounded-full animate-ping"></div>
         </div>
 

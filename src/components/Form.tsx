@@ -1,5 +1,7 @@
+import { findSavedCity } from "../services/cityIdentity";
+import { cityDetailTarget } from "../map/mapBehaviour";
 import { useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useURLPosition } from "../hooks/useURLPosition";
 import Message from "../components/Message";
 import Spinner from "./Spinner";
@@ -28,7 +30,7 @@ function Form() {
   const [isLoadingGeoCoding, setIsLoadingGeoCoding] = useState(false);
   const [emoji, setEmoji] = useState("");
   const [error, setError] = useState("");
-  const { createCity, isLoading } = useCities();
+  const { createCity, isLoading, cities } = useCities();
 
   useEffect(() => {
     if (!lat && !lng) return;
@@ -46,7 +48,11 @@ function Form() {
         setCountry(place.country);
         setEmoji(place.countryCode);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Could not look up that location.");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Could not look up that location.",
+        );
       } finally {
         setIsLoadingGeoCoding(false);
       }
@@ -76,10 +82,28 @@ function Form() {
     }
   }
 
+  const savedCity = findSavedCity(cities, {
+    cityName,
+    country,
+    position: { lat: lat ?? "NaN", lng: lng ?? "NaN" },
+  });
+  if (savedCity && !isLoadingGeoCoding)
+    return (
+      <div className="duplicate-notice">
+        <h2>Already in your list</h2>
+        <p>
+          {savedCity.cityName} is saved. You can update its visit count or add
+          more memories.
+        </p>
+        <Link to={cityDetailTarget(savedCity.id, savedCity.position)}>
+          View {savedCity.cityName}
+        </Link>
+        <Link to="/app/map">Back to map</Link>
+      </div>
+    );
   if (error) return <Message message={error} />;
   if (isLoadingGeoCoding) return <Spinner />;
-  if (!lat && !lng)
-    return <Message message="Start by clicking on the map 🗺️" />;
+  if (!lat && !lng) return <Message message="Start by clicking on the map " />;
 
   return (
     <form

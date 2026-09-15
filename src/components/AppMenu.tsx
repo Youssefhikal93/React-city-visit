@@ -1,3 +1,13 @@
+import {
+  FiMap,
+  FiMapPin,
+  FiGlobe,
+  FiHome,
+  FiInfo,
+  FiTag,
+  FiLogOut,
+  FiLogIn,
+} from "react-icons/fi";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -46,7 +56,7 @@ function AppMenu() {
   }
 
   return (
-    <div className="fixed left-3 top-3 z-[1100]" ref={panelRef}>
+    <div className="app-menu fixed left-3 z-[1100]" ref={panelRef}>
       <button
         aria-expanded={isOpen}
         aria-label={isOpen ? "Close menu" : "Open menu"}
@@ -73,7 +83,7 @@ function AppMenu() {
       {isOpen && (
         <nav
           aria-label="Menu"
-          className="mt-2 w-60 rounded-xl border border-dark-2 bg-dark-1/98 p-2 shadow-2xl backdrop-blur-sm"
+          className="mt-2 max-h-[calc(100dvh-env(safe-area-inset-top)-8rem)] overflow-y-auto w-60 rounded-xl border border-dark-2 bg-dark-1/98 p-2 shadow-2xl backdrop-blur-sm"
         >
           {user && (
             <div className="border-b border-dark-2 px-3 pb-3 pt-2">
@@ -94,7 +104,7 @@ function AppMenu() {
                 onClick={() => setIsOpen(false)}
                 to="/app/map"
               >
-                🗺️ Map
+                <FiMap aria-hidden="true" /> Map
               </Link>
             </li>
             <li>
@@ -103,7 +113,7 @@ function AppMenu() {
                 onClick={() => setIsOpen(false)}
                 to="/app/cities"
               >
-                📍 Cities
+                <FiMapPin aria-hidden="true" /> Cities
               </Link>
             </li>
             <li>
@@ -112,7 +122,7 @@ function AppMenu() {
                 onClick={() => setIsOpen(false)}
                 to="/app/countries"
               >
-                🌍 Countries
+                <FiGlobe aria-hidden="true" /> Countries
               </Link>
             </li>
             <li>
@@ -121,20 +131,48 @@ function AppMenu() {
                 onClick={() => setIsOpen(false)}
                 to="/"
               >
-                🏠 Home
+                <FiHome aria-hidden="true" /> Home
+              </Link>
+            </li>
+            <li>
+              <Link
+                className={itemClassName}
+                onClick={() => setIsOpen(false)}
+                to="/product"
+              >
+                <FiInfo aria-hidden="true" /> Products
+              </Link>
+            </li>
+            <li>
+              <Link
+                className={itemClassName}
+                onClick={() => setIsOpen(false)}
+                to="/pricing"
+              >
+                <FiTag aria-hidden="true" /> Pricing
               </Link>
             </li>
           </ul>
 
-          <div className="border-t border-dark-2 pt-2">
-            <button
-              className={`${itemClassName} text-red-400 hover:bg-red-500/15`}
-              onClick={handleSignOut}
-              type="button"
+          {user ? (
+            <div className="border-t border-dark-2 pt-2">
+              <button
+                className={`${itemClassName} text-red-400 hover:bg-red-500/15`}
+                onClick={handleSignOut}
+                type="button"
+              >
+                <FiLogOut aria-hidden="true" /> Sign out
+              </button>
+            </div>
+          ) : (
+            <Link
+              className={itemClassName}
+              onClick={() => setIsOpen(false)}
+              to="/login"
             >
-              ⏻ Sign out
-            </button>
-          </div>
+              <FiLogIn aria-hidden="true" /> Sign in
+            </Link>
+          )}
         </nav>
       )}
     </div>
