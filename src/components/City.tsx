@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { useCities } from "../context/CitiesContext";
+import { mapCityTarget } from "../map/mapBehaviour";
 import type { Memory } from "../types";
 import { fitWithinLongSide } from "./memoryDimensions";
 import Spinner from "./Spinner";
@@ -290,12 +291,21 @@ function City() {
             </a>
           </section>
 
-          <button
-            onClick={() => navigate(-1)}
-            className="min-h-11 rounded-xl border border-brand-1/60 bg-dark-1 px-6 py-3 font-semibold text-light-2 transition-colors hover:border-brand-2 hover:bg-brand-2 hover:text-dark-1 focus:outline-none focus:ring-2 focus:ring-brand-2"
-          >
-            &larr; Back
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(mapCityTarget(currentCity))}
+              className="min-h-11 rounded-xl bg-brand-2 px-6 py-3 font-semibold text-dark-1 transition-colors hover:bg-brand-1 focus:outline-none focus:ring-2 focus:ring-brand-2"
+            >
+              Show on map
+            </button>
+            <button
+              onClick={() => navigate(-1)}
+              className="min-h-11 rounded-xl border border-brand-1/60 bg-dark-1 px-6 py-3 font-semibold text-light-2 transition-colors hover:border-brand-2 hover:bg-brand-2 hover:text-dark-1 focus:outline-none focus:ring-2 focus:ring-brand-2"
+            >
+              &larr; Back
+            </button>
+          </div>
         </div>
       </div>
 

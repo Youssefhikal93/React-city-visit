@@ -51,6 +51,10 @@ export type MapView =
       padding: [number, number];
     };
 
+export type MapTarget =
+  | { kind: "city"; city: City; view: MapView }
+  | { kind: "country"; country: string; view: MapView };
+
 export const NO_PENDING_PIN: PendingPinState = { kind: "none" };
 export const DEFAULT_WORLD_VIEW: Extract<MapView, { kind: "center" }> = {
   kind: "center",
@@ -85,6 +89,43 @@ export function pendingPinNavigationTarget(
 
 export function cityDetailTarget(id: string, position: Position): string {
   return `/app/cities/${id}?lat=${position.lat}&lng=${position.lng}`;
+}
+
+export function mapCityTarget(city: City): string {
+  const searchParams = new URLSearchParams({
+    lat: String(city.position.lat),
+    lng: String(city.position.lng),
+    cityId: city.id,
+  });
+  return `/app/map?${searchParams.toString()}`;
+}
+
+export function mapCountryTarget(country: string): string {
+  const searchParams = new URLSearchParams({ country });
+  return `/app/map?${searchParams.toString()}`;
+}
+
+export function resolveMapTarget(
+  search: string,
+  cities: City[]
+): MapTarget | null {
+  const searchParams = new URLSearchParams(search);
+  const cityId = searchParams.get("cityId");
+
+  if (cityId) {
+    const city = cities.find((savedCity) => savedCity.id === cityId);
+    return city
+      ? { kind: "city", city, view: mapViewForPositions([city.position]) }
+      : null;
+  }
+
+  const country = searchParams.get("country");
+  if (!country) return null;
+
+  const positions = cities
+    .filter((city) => city.country === country)
+    .map((city) => city.position);
+  return { kind: "country", country, view: mapViewForPositions(positions) };
 }
 
 export function searchSavedCities(

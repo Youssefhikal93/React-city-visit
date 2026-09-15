@@ -1,5 +1,5 @@
-import { useEffect, useReducer, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   MapContainer,
   Marker,
@@ -11,6 +11,7 @@ import {
 import {
   Icon,
   type LatLngBoundsExpression,
+  type Map as LeafletMap,
   type Marker as LeafletMarker,
 } from "leaflet";
 import markerIconUrl from "leaflet/dist/images/marker-icon.png";
@@ -27,6 +28,9 @@ import {
   pendingPinReducer,
   pendingPinNavigationTarget,
   positionFromQuery,
+  resolveMapTarget,
+  type MapTarget,
+  type MapView,
   type WorldPlaceSearchResult,
 } from "../map/mapBehaviour";
 import type { City, Position } from "../types";
@@ -45,6 +49,7 @@ const cityIcon = new Icon({
 
 function Map() {
   const navigate = useNavigate();
+  const { search } = useLocation();
   const { cities, clearError, isLoading } = useCities();
   const {
     getPosition: getPositionGeoLocation,
@@ -62,7 +67,14 @@ function Map() {
   );
   const cityMarkers = useRef(new globalThis.Map<string, LeafletMarker>());
   const urlPosition = positionFromQuery(lat, lng);
-  const initialCenter = urlPosition ?? DEFAULT_WORLD_VIEW.position;
+  const mapTarget = useMemo(
+    () => resolveMapTarget(search, cities),
+    [cities, search]
+  );
+  const initialCenter =
+    mapTarget?.view.kind === "center"
+      ? mapTarget.view.position
+      : urlPosition ?? DEFAULT_WORLD_VIEW.position;
   const requestedPosition = positionGeoLocation ?? urlPosition;
 
   function handleMapTap(position: Position): void {
@@ -154,9 +166,10 @@ function Map() {
         <ApplyInitialView
           isLoading={isLoading}
           positions={cities.map((city) => city.position)}
-          shouldSkip={urlPosition !== null}
+          shouldSkip={urlPosition !== null || mapTarget !== null}
         />
         {requestedPosition && <ChangeCenter position={requestedPosition} />}
+        <ApplyMapTarget target={mapTarget} markers={cityMarkers.current} />
         {searchTarget && (
           <FlyToSearchResult
             city={searchTarget}
@@ -185,6 +198,25 @@ function Map() {
       </button>
     </div>
   );
+}
+
+function ApplyMapTarget({
+  target,
+  markers,
+}: {
+  target: MapTarget | null;
+  markers: globalThis.Map<string, LeafletMarker>;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!target) return;
+
+    applyMapView(map, target.view);
+    if (target.kind === "city") markers.get(target.city.id)?.openPopup();
+  }, [map, markers, target]);
+
+  return null;
 }
 
 function FlyToWorldSearchResult({ position }: { position: Position }) {
@@ -248,20 +280,24 @@ function ApplyInitialView({
 
     if (isLoading) return;
 
-    const view = mapViewForPositions(positions);
-    if (view.kind === "center") {
-      map.setView([view.position.lat, view.position.lng], view.zoom);
-    } else {
-      const bounds: LatLngBoundsExpression = [
-        [view.southWest.lat, view.southWest.lng],
-        [view.northEast.lat, view.northEast.lng],
-      ];
-      map.fitBounds(bounds, { padding: view.padding });
-    }
+    applyMapView(map, mapViewForPositions(positions));
     hasAppliedInitialView.current = true;
   }, [isLoading, map, positions, shouldSkip]);
 
   return null;
+}
+
+function applyMapView(map: LeafletMap, view: MapView): void {
+  if (view.kind === "center") {
+    map.setView([view.position.lat, view.position.lng], view.zoom);
+    return;
+  }
+
+  const bounds: LatLngBoundsExpression = [
+    [view.southWest.lat, view.southWest.lng],
+    [view.northEast.lat, view.northEast.lng],
+  ];
+  map.fitBounds(bounds, { padding: view.padding });
 }
 
 function ChangeCenter({ position }: { position: Position }) {
