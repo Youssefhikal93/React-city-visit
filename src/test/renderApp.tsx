@@ -97,7 +97,7 @@ export interface RenderAppOptions {
   viewport?: "phone" | "wide";
 }
 
-function installMatchMedia(viewport: "phone" | "wide") {
+export function installMatchMedia(viewport: "phone" | "wide") {
   window.matchMedia = (query: string): MediaQueryList => {
     const changeListeners = new Set<EventListenerOrEventListenerObject>();
     const legacyListeners = new Set<

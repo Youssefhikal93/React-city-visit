@@ -62,6 +62,8 @@ export const DEFAULT_WORLD_VIEW: Extract<MapView, { kind: "center" }> = {
   zoom: 2,
 };
 export const SINGLE_CITY_ZOOM = 10;
+/** Close enough to recognise the streets around you, not the whole country. */
+export const LOCATED_POSITION_ZOOM = 14;
 
 export function pendingPinReducer(
   _state: PendingPinState,
@@ -77,8 +79,13 @@ export function pendingPinReducer(
   }
 }
 
+/**
+ * Absolute on purpose. A relative "form" resolves against whichever route
+ * rendered the map, so on a phone -- where the map has a route of its own --
+ * it became /app/map/form and 404'd.
+ */
 function addCityTarget(position: Position): string {
-  return `form?lat=${position.lat}&lng=${position.lng}`;
+  return `/app/form?lat=${position.lat}&lng=${position.lng}`;
 }
 
 export function pendingPinNavigationTarget(

@@ -60,7 +60,7 @@ describe("pending pins", () => {
       NO_PENDING_PIN
     );
     expect(pendingPinNavigationTarget(pendingPin)).toBe(
-      "form?lat=59.3293&lng=18.0686"
+      "/app/form?lat=59.3293&lng=18.0686"
     );
   });
 
