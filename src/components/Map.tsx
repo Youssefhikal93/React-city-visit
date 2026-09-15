@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   MapContainer,
@@ -28,7 +28,8 @@ import {
   pendingPinNavigationTarget,
   positionFromQuery,
 } from "../map/mapBehaviour";
-import type { Position } from "../types";
+import type { City, Position } from "../types";
+import { MapSearch } from "./MapSearch";
 import Spinner from "./Spinner";
 
 const cityIcon = new Icon({
@@ -54,6 +55,8 @@ function Map() {
     pendingPinReducer,
     NO_PENDING_PIN
   );
+  const [searchTarget, setSearchTarget] = useState<City | null>(null);
+  const cityMarkers = useRef(new globalThis.Map<string, LeafletMarker>());
   const urlPosition = positionFromQuery(lat, lng);
   const initialCenter = urlPosition ?? DEFAULT_WORLD_VIEW.position;
   const requestedPosition = positionGeoLocation ?? urlPosition;
@@ -73,6 +76,10 @@ function Map() {
 
   function handleDismissPendingPin(): void {
     dispatchPendingPin({ type: "dismiss" });
+  }
+
+  function selectSavedCity(city: City): void {
+    setSearchTarget(city);
   }
 
   return (
@@ -103,6 +110,10 @@ function Map() {
             icon={cityIcon}
             key={city.id}
             position={[city.position.lat, city.position.lng]}
+            ref={(marker) => {
+              if (marker) cityMarkers.current.set(city.id, marker);
+              else cityMarkers.current.delete(city.id);
+            }}
           >
             <Popup className="text-dark-0" maxWidth={240}>
               <div className="flex min-w-40 items-center gap-2 p-2">
@@ -136,8 +147,16 @@ function Map() {
           shouldSkip={urlPosition !== null}
         />
         {requestedPosition && <ChangeCenter position={requestedPosition} />}
+        {searchTarget && (
+          <FlyToSearchResult
+            city={searchTarget}
+            marker={cityMarkers.current.get(searchTarget.id) ?? null}
+          />
+        )}
         <DetectClick onTap={handleMapTap} />
       </MapContainer>
+
+      <MapSearch cities={cities} onCityPicked={selectSavedCity} />
 
       <button
         aria-label="Use your Position"
@@ -151,6 +170,26 @@ function Map() {
       </button>
     </div>
   );
+}
+
+function FlyToSearchResult({
+  city,
+  marker,
+}: {
+  city: City;
+  marker: LeafletMarker | null;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.flyTo([city.position.lat, city.position.lng], map.getZoom(), {
+      animate: true,
+      duration: 1,
+    });
+    marker?.openPopup();
+  }, [city, map, marker]);
+
+  return null;
 }
 
 function ApplyInitialView({
