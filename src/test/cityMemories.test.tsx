@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { aCity } from "./fakeCitiesService";
+import { aCity, createFakeCitiesService } from "./fakeCitiesService";
 import { renderApp } from "./renderApp";
 
 const firstMemory = { id: "memory-a", dataUri: "data:image/jpeg;base64,first" };
@@ -12,9 +12,11 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function renderCity(memories = [firstMemory]) {
+function renderCity(memories = [firstMemory], legacyImage?: string) {
   return renderApp({
-    cities: [aCity({ id: "stockholm", cityName: "Stockholm", memories })],
+    cities: [
+      aCity({ id: "stockholm", cityName: "Stockholm", memories, legacyImage }),
+    ],
     route: "/app/cities/stockholm",
   });
 }
@@ -26,7 +28,7 @@ describe("City Memories", () => {
         aCity({
           id: "stockholm",
           cityName: "Stockholm",
-          memories: [{ id: "legacy-image", dataUri: "data:image/jpeg;base64,legacy" }],
+          legacyImage: "data:image/jpeg;base64,legacy",
         }),
       ],
       route: "/app/cities/stockholm",
@@ -81,17 +83,57 @@ describe("City Memories", () => {
     );
   });
 
-  it("disables adding after five Memories and explains why", async () => {
+  it("counts a legacy Memory toward the five-Memory limit", async () => {
     renderCity([
-      firstMemory,
       secondMemory,
       { id: "memory-c", dataUri: "data:image/jpeg;base64,third" },
       { id: "memory-d", dataUri: "data:image/jpeg;base64,fourth" },
       { id: "memory-e", dataUri: "data:image/jpeg;base64,fifth" },
-    ]);
+    ], "data:image/jpeg;base64,legacy");
 
     expect(await screen.findByRole("button", { name: "Add a Memory" })).toBeDisabled();
     expect(screen.getByText("A City can hold up to five Memories.")).toBeVisible();
+  });
+
+  it("lets a legacy City add four Memories before reaching the limit", async () => {
+    const cities = createFakeCitiesService([
+      aCity({
+        id: "stockholm",
+        legacyImage: "data:image/jpeg;base64,legacy",
+      }),
+    ]);
+
+    for (const dataUri of ["one", "two", "three", "four"]) {
+      await cities.addMemory("tester", "stockholm", `data:image/jpeg;base64,${dataUri}`);
+    }
+
+    await expect(cities.fetchCity("tester", "stockholm")).resolves.toMatchObject({
+      memories: [
+        { id: "legacy-image", dataUri: "data:image/jpeg;base64,legacy" },
+        { id: "memory-1", dataUri: "data:image/jpeg;base64,one" },
+        { id: "memory-2", dataUri: "data:image/jpeg;base64,two" },
+        { id: "memory-3", dataUri: "data:image/jpeg;base64,three" },
+        { id: "memory-4", dataUri: "data:image/jpeg;base64,four" },
+      ],
+    });
+  });
+
+  it("deletes a legacy Memory without deleting other converged Memories", async () => {
+    const cities = createFakeCitiesService([
+      aCity({
+        id: "stockholm",
+        memories: [
+          { id: "legacy-image", dataUri: "data:image/jpeg;base64,legacy" },
+          secondMemory,
+        ],
+      }),
+    ]);
+
+    await cities.deleteMemory("tester", "stockholm", "legacy-image");
+
+    await expect(cities.fetchCity("tester", "stockholm")).resolves.toMatchObject({
+      memories: [secondMemory],
+    });
   });
 
   it("enlarges a Memory and returns to the grid when closed", async () => {
