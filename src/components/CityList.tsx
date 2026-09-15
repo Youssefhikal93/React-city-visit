@@ -1,3 +1,4 @@
+import { FiMapPin } from "react-icons/fi";
 import Spinner from "./Spinner";
 import CityItem from "./CityItem";
 import Message from "./Message";
@@ -5,34 +6,25 @@ import { useCities } from "../context/CitiesContext";
 
 function CityList() {
   const { cities, isLoading, error } = useCities();
-
   if (isLoading) return <Spinner />;
   if (error) return <Message message={error} />;
   if (!cities.length)
-    return (
-      <Message message={"Add your first city by clicking on the map! 📍"} />
-    );
-
+    return <Message message="Add your first city by tapping the map." />;
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center justify-between px-2 pt-1 pb-0 mb-2">
-        <h2 className="text-sm font-bold text-light-2 flex items-center gap-2">
-          <span className="text-brand-1 text-base">📍</span>
-          Cities
-          <span className="text-xs font-normal text-light-1 bg-dark-2 px-2 py-0.5 rounded-full">
-            {cities.length}
-          </span>
+    <section className="journal-list">
+      <header className="journal-heading">
+        <span className="eyebrow">PLACES THAT STAY WITH YOU</span>
+        <h2>
+          <FiMapPin aria-hidden="true" /> Cities <span>{cities.length}</span>
         </h2>
-      </div>
-      <div className="w-full min-h-0 flex-1 overflow-y-auto bg-dark-2 rounded-lg p-2 scrollbar">
-        <ul className="">
-          {cities.map((city) => (
-            <CityItem city={city} key={city.id} />
-          ))}
-        </ul>
-      </div>
-    </div>
+        <p>Your places, your stories, your way back.</p>
+      </header>
+      <ul className="city-list">
+        {cities.map((city) => (
+          <CityItem city={city} key={city.id} />
+        ))}
+      </ul>
+    </section>
   );
 }
-
 export default CityList;

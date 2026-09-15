@@ -1,4 +1,4 @@
-﻿import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 import AppMenu from "../components/AppMenu";
 import BottomBar from "../components/BottomBar";
@@ -18,7 +18,7 @@ function AppLayout() {
 
     return (
       <>
-        <div className="h-screen w-screen bg-dark-0 pb-[calc(4rem+env(safe-area-inset-bottom))]">
+        <div className="phone-shell bg-dark-0">
           {isMapView ? routedView : <SideBar>{routedView}</SideBar>}
         </div>
         <AppMenu />
@@ -29,13 +29,13 @@ function AppLayout() {
 
   return (
     <>
-      <div className="h-screen w-screen bg-dark-0 ">
-        <div className="grid grid-rows-2 md:grid-cols-2 h-full gap-4  md:gap-2 sm:gap-1">
-          <SideBar navigation={<AppNav />}>{routedView}</SideBar>
+      <div className="h-dvh w-full bg-dark-0 ">
+        <div className="grid grid-cols-[minmax(320px,420px)_1fr] h-full">
+          <SideBar navigation={<AppNav />} footer={<User />}>{routedView}</SideBar>
           <Map />
         </div>
       </div>
-      <User />
+
     </>
   );
 }

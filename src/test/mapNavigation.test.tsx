@@ -61,6 +61,7 @@ describe("map navigation", () => {
         viewport,
       });
 
+      await user.click(await screen.findByRole("button", { name: /France/ }));
       await user.click(
         await screen.findByRole("link", { name: "Show France on map" })
       );

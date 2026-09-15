@@ -5,17 +5,18 @@ import {
   Marker,
   Popup,
   TileLayer,
+  ZoomControl,
   useMap,
   useMapEvents,
 } from "react-leaflet";
 import {
-  Icon,
+  divIcon,
   type LatLngBoundsExpression,
   type Map as LeafletMap,
   type Marker as LeafletMarker,
 } from "leaflet";
-import markerIconUrl from "leaflet/dist/images/marker-icon.png";
-import markerShadowUrl from "leaflet/dist/images/marker-shadow.png";
+import { FiNavigation } from "react-icons/fi";
+import { findSavedCity } from "../services/cityIdentity";
 
 import { useCities } from "../context/CitiesContext";
 import { reverseGeocode, type PlaceName } from "../services/geocoding";
@@ -39,14 +40,12 @@ import type { City, Position } from "../types";
 import { MapSearch } from "./MapSearch";
 import Spinner from "./Spinner";
 
-const cityIcon = new Icon({
-  iconUrl: markerIconUrl,
-  shadowUrl: markerShadowUrl,
-  iconSize: [44, 72],
-  iconAnchor: [22, 72],
-  popupAnchor: [0, -62],
-  shadowSize: [72, 72],
-  shadowAnchor: [22, 72],
+const cityIcon = divIcon({
+  className: "city-marker",
+  html: '<svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg"><path d="M14 34S2 21 2 14a12 12 0 1 1 24 0c0 7-12 20-12 20Z" fill="#168568" stroke="white" stroke-width="2.5"/><circle cx="14" cy="14" r="4" fill="white"/></svg>',
+  iconSize: [28, 36],
+  iconAnchor: [14, 35],
+  popupAnchor: [0, -30],
 });
 
 function Map() {
@@ -61,22 +60,22 @@ function Map() {
   const [lat, lng] = useURLPosition();
   const [pendingPin, dispatchPendingPin] = useReducer(
     pendingPinReducer,
-    NO_PENDING_PIN
+    NO_PENDING_PIN,
   );
   const [searchTarget, setSearchTarget] = useState<City | null>(null);
   const [worldSearchTarget, setWorldSearchTarget] = useState<Position | null>(
-    null
+    null,
   );
   const cityMarkers = useRef(new globalThis.Map<string, LeafletMarker>());
   const urlPosition = positionFromQuery(lat, lng);
   const mapTarget = useMemo(
     () => resolveMapTarget(search, cities),
-    [cities, search]
+    [cities, search],
   );
   const initialCenter =
     mapTarget?.view.kind === "center"
       ? mapTarget.view.position
-      : urlPosition ?? DEFAULT_WORLD_VIEW.position;
+      : (urlPosition ?? DEFAULT_WORLD_VIEW.position);
   const requestedPosition = positionGeoLocation ?? urlPosition;
 
   function handleMapTap(position: Position): void {
@@ -103,7 +102,10 @@ function Map() {
   function selectWorldPlace(place: WorldPlaceSearchResult): void {
     clearError();
     setWorldSearchTarget(place.position);
-    dispatchPendingPin({ type: "searchResultPicked", position: place.position });
+    dispatchPendingPin({
+      type: "searchResultPicked",
+      position: place.position,
+    });
   }
 
   // Locating is nearly always a prelude to adding where you are standing, so
@@ -118,11 +120,12 @@ function Map() {
   }, [positionGeoLocation]);
 
   return (
-    <div className="relative h-full w-full flex-1 overflow-hidden rounded-lg bg-dark-2 shadow-2xl sm:rounded-lg sm:shadow-xl md:h-screen md:rounded-none md:shadow-lg">
+    <div className="relative h-full w-full flex-1 overflow-hidden rounded-lg bg-dark-2 shadow-2xl sm:rounded-lg sm:shadow-xl md:h-full md:rounded-none md:shadow-lg">
       <MapContainer
         className="h-full w-full"
         center={[initialCenter.lat, initialCenter.lng]}
         zoom={DEFAULT_WORLD_VIEW.zoom}
+        zoomControl={false}
         scrollWheelZoom
         minZoom={2}
         maxZoom={18}
@@ -134,6 +137,7 @@ function Map() {
           background: "linear-gradient(135deg, #2d3439 0%, #42484d 100%)",
         }}
       >
+        <ZoomControl position="bottomleft" />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -142,6 +146,8 @@ function Map() {
 
         {cities.map((city) => (
           <Marker
+            title={city.cityName}
+            alt={city.cityName}
             icon={cityIcon}
             key={city.id}
             position={[city.position.lat, city.position.lng]}
@@ -164,6 +170,9 @@ function Map() {
                   {city.cityName}
                 </Link>
               </div>
+              <p className="saved-city-note">
+                Already in your list - {city.visitCount ?? 1} visits
+              </p>
             </Popup>
           </Marker>
         ))}
@@ -194,7 +203,9 @@ function Map() {
             marker={cityMarkers.current.get(searchTarget.id) ?? null}
           />
         )}
-        {worldSearchTarget && <FlyToWorldSearchResult position={worldSearchTarget} />}
+        {worldSearchTarget && (
+          <FlyToWorldSearchResult position={worldSearchTarget} />
+        )}
         <DetectClick onTap={handleMapTap} />
       </MapContainer>
 
@@ -206,13 +217,16 @@ function Map() {
 
       <button
         aria-label="Use your Position"
-        className="absolute bottom-20 right-4 z-[1000] flex min-h-11 items-center gap-2 rounded-lg bg-brand-2 px-4 py-2 text-sm font-bold text-dark-1 shadow-lg focus:outline-none focus:ring-2 focus:ring-light-2"
+        className="absolute bottom-8 right-3 z-[1000] flex min-h-11 items-center gap-2 rounded-lg bg-brand-2 px-4 py-2 text-sm font-bold text-dark-1 shadow-lg focus:outline-none focus:ring-2 focus:ring-light-2"
         disabled={isLoadingGeoLocation}
         onClick={getPositionGeoLocation}
         type="button"
       >
         {isLoadingGeoLocation ? <Spinner small /> : null}
-        <span>{isLoadingGeoLocation ? "Locating..." : "Use your Position"}</span>
+        <FiNavigation aria-hidden="true" />
+        <span>
+          {isLoadingGeoLocation ? "Locating..." : "Use your Position"}
+        </span>
       </button>
     </div>
   );
@@ -322,7 +336,13 @@ function applyMapView(map: LeafletMap, view: MapView): void {
  * Keeping the current zoom left an Account looking at their street from the
  * world view, which reads as "nothing happened".
  */
-function ChangeCenter({ position, zoom }: { position: Position; zoom?: number }) {
+function ChangeCenter({
+  position,
+  zoom,
+}: {
+  position: Position;
+  zoom?: number;
+}) {
   const map = useMap();
 
   useEffect(() => {
@@ -354,7 +374,7 @@ function usePlaceName(position: Position): PlaceName | null {
     const controller = new AbortController();
     setPlaceName(null);
 
-    reverseGeocode(position, controller.signal)
+    reverseGeocode({ lat: position.lat, lng: position.lng }, controller.signal)
       .then(setPlaceName)
       .catch(() => setPlaceName(null));
 
@@ -375,6 +395,12 @@ function PendingPin({
 }) {
   const marker = useRef<LeafletMarker | null>(null);
   const placeName = usePlaceName(position);
+  const { cities } = useCities();
+  const savedCity = findSavedCity(cities, {
+    cityName: placeName?.cityName ?? "",
+    country: placeName?.country ?? "",
+    position,
+  });
 
   useEffect(() => {
     marker.current?.openPopup();
@@ -383,9 +409,17 @@ function PendingPin({
   const place = placeName?.cityName || placeName?.country;
 
   return (
-    <Marker icon={cityIcon} position={[position.lat, position.lng]} ref={marker}>
-      <Popup closeOnEscapeKey eventHandlers={{ remove: onDismiss }}>
-        <div className="flex min-w-48 flex-col gap-3 p-2 text-dark-0">
+    <Marker
+      icon={cityIcon}
+      position={[position.lat, position.lng]}
+      ref={marker}
+    >
+      <Popup
+        maxWidth={240}
+        closeOnEscapeKey
+        eventHandlers={{ remove: onDismiss }}
+      >
+        <div className="flex w-48 max-w-full flex-col gap-3 p-2 text-dark-0">
           <span className="flex items-center gap-2 text-base font-semibold">
             {placeName && (
               <img
@@ -394,15 +428,28 @@ function PendingPin({
                 src={`https://flagcdn.com/24x18/${placeName.countryCode}.png`}
               />
             )}
-            {place ? `Add ${place}?` : "Add city here?"}
+            {savedCity
+              ? `${savedCity.cityName} is already in your list`
+              : place
+                ? `Add ${place}?`
+                : "Add city here?"}
           </span>
-          <button
-            className="min-h-11 rounded bg-brand-2 px-3 py-2 font-bold text-dark-1 focus:outline-none focus:ring-2 focus:ring-dark-0"
-            onClick={onConfirm}
-            type="button"
-          >
-            {place ? `Add ${place}` : "Add City"}
-          </button>
+          {savedCity ? (
+            <Link
+              className="popup-action"
+              to={cityDetailTarget(savedCity.id, savedCity.position)}
+            >
+              View city & visits
+            </Link>
+          ) : (
+            <button
+              className="min-h-11 rounded bg-brand-2 px-3 py-2 font-bold text-dark-1 focus:outline-none focus:ring-2 focus:ring-dark-0"
+              onClick={onConfirm}
+              type="button"
+            >
+              {place ? `Add ${place}` : "Add City"}
+            </button>
+          )}
         </div>
       </Popup>
     </Marker>

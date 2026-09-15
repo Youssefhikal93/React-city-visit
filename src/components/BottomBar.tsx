@@ -1,7 +1,8 @@
-﻿import { Link, useLocation } from "react-router-dom";
+import { FiMap, FiMapPin, FiGlobe } from "react-icons/fi";
+import { Link, useLocation } from "react-router-dom";
 
 const tabClassName =
-  "flex h-12 flex-1 items-center justify-center rounded-lg px-3 text-sm font-semibold transition-colors";
+  "flex h-14 flex-1 flex-col gap-1 items-center justify-center rounded-xl px-3 text-xs font-semibold transition-colors";
 
 function BottomBar() {
   const { pathname } = useLocation();
@@ -19,9 +20,12 @@ function BottomBar() {
         to="map"
         aria-current={isMapView ? "page" : undefined}
         className={`${tabClassName} ${
-          isMapView ? "bg-brand-2 text-white" : "text-light-1 hover:bg-dark-2"
+          isMapView
+            ? "bg-brand-2/10 text-brand-2"
+            : "text-light-1 hover:bg-dark-2"
         }`}
       >
+        <FiMap className="h-5 w-5" aria-hidden="true" />
         Map
       </Link>
       <Link
@@ -29,10 +33,11 @@ function BottomBar() {
         aria-current={isCitiesView ? "page" : undefined}
         className={`${tabClassName} ${
           isCitiesView
-            ? "bg-brand-2 text-white"
+            ? "bg-brand-2/10 text-brand-2"
             : "text-light-1 hover:bg-dark-2"
         }`}
       >
+        <FiMapPin className="h-5 w-5" aria-hidden="true" />
         Cities
       </Link>
       <Link
@@ -40,10 +45,11 @@ function BottomBar() {
         aria-current={isCountriesView ? "page" : undefined}
         className={`${tabClassName} ${
           isCountriesView
-            ? "bg-brand-2 text-white"
+            ? "bg-brand-2/10 text-brand-2"
             : "text-light-1 hover:bg-dark-2"
         }`}
       >
+        <FiGlobe className="h-5 w-5" aria-hidden="true" />
         Countries
       </Link>
     </nav>
@@ -51,5 +57,3 @@ function BottomBar() {
 }
 
 export default BottomBar;
-
-

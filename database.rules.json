@@ -39,10 +39,11 @@
             "country": { ".validate": "newData.isString() && newData.val().length <= 120" },
             "emoji": { ".validate": "newData.isString() && newData.val().length <= 16" },
             "date": { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "visitCount": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() % 1 === 0" },
             "notes": { ".validate": "newData.isString() && newData.val().length <= 2000" },
             "image": { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 2000000)" },
             "memories": {
-              ".validate": "!newData.exists() || newData.numChildren() <= 5",
+              // Realtime Database rules cannot count children. The app limits Cities to five Memories.
               "$memoryId": {
                 ".validate": "newData.isString() && newData.val().length <= 2000000"
               }

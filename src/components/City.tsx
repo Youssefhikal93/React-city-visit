@@ -1,3 +1,4 @@
+import VisitCounter from "./VisitCounter";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -204,6 +205,7 @@ function City() {
             </section>
           )}
 
+          <VisitCounter city={currentCity} />
           <section className="space-y-4" aria-labelledby="memories-heading">
             <h2 id="memories-heading" className="text-xs font-extrabold uppercase tracking-wider text-light-1 sm:text-sm">
               Memories

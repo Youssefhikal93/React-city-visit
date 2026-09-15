@@ -77,7 +77,7 @@ export function MapSearch({
   if (isPhone && !isExpanded) {
     return (
       <div
-        className="absolute right-4 top-3 z-[1000]"
+        className="map-search absolute right-3 top-3 z-[1000]"
         onClick={(event) => event.stopPropagation()}
         onPointerDown={(event) => event.stopPropagation()}
       >
@@ -105,7 +105,7 @@ export function MapSearch({
 
   return (
     <div
-      className="absolute left-16 right-4 top-3 z-[1000] md:left-4 md:right-28 md:top-4"
+      className="map-search absolute left-16 right-3 top-3 z-[1000] md:left-4 md:right-4 md:max-w-lg md:top-4"
       onClick={(event) => event.stopPropagation()}
       onPointerDown={(event) => event.stopPropagation()}
       ref={searchRef}

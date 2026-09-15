@@ -17,7 +17,7 @@ interface ReverseGeocodeResponse {
 }
 
 export const NOT_A_COUNTRY =
-  "This location doesn't appear to be a country. Please click somewhere else 📍";
+  "This location doesn't appear to be a country. Please click somewhere else ";
 
 /**
  * Names the place at a Position. Shared by the Add City form and the map's

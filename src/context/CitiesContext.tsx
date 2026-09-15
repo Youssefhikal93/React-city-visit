@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { useAuth } from "./AuthContext";
+import { findSavedCity } from "../services/cityIdentity";
 import * as citiesApi from "../services/cities";
 import type { City, CityUpdate, NewCity } from "../types";
 
@@ -59,7 +60,8 @@ function reducer(state: CitiesState, action: CitiesAction): CitiesState {
       return { ...state, isLoading: true };
     case "cities/loaded": {
       const currentCity = state.currentCity
-        ? action.payload.find((city) => city.id === state.currentCity?.id) ?? null
+        ? (action.payload.find((city) => city.id === state.currentCity?.id) ??
+          null)
         : null;
       return {
         ...state,
@@ -102,7 +104,7 @@ function CitiesProvider({ children }: { children: ReactNode }) {
 
   const [{ cities, isLoading, currentCity, error }, dispatch] = useReducer(
     reducer,
-    initialState
+    initialState,
   );
 
   const clearError = useCallback(() => dispatch({ type: "clearError" }), []);
@@ -126,7 +128,7 @@ function CitiesProvider({ children }: { children: ReactNode }) {
           type: "error",
           payload: "Couldn't load your cities from Firebase.",
         });
-      }
+      },
     );
 
     return unsubscribe;
@@ -148,7 +150,7 @@ function CitiesProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [username]
+    [username],
   );
 
   const createCity = useCallback(
@@ -157,17 +159,11 @@ function CitiesProvider({ children }: { children: ReactNode }) {
 
       dispatch({ type: "loading" });
       try {
-        const isDuplicate = cities.some(
-          (city) =>
-            city.cityName.toLowerCase() === newCity.cityName.toLowerCase()
-        );
-
-        if (isDuplicate) {
+        if (findSavedCity(cities, newCity)) {
           throw new Error(
-            "This city already exists in your list! 🌍, click on the map to choose another city"
+            "This city is already in your list. Open it to update your visits.",
           );
         }
-
         const created = await citiesApi.createCity(username, newCity);
         dispatch({ type: "city/created", payload: created });
         return { success: true };
@@ -178,7 +174,7 @@ function CitiesProvider({ children }: { children: ReactNode }) {
         return { success: false, error: message };
       }
     },
-    [username, cities]
+    [username, cities],
   );
 
   const deleteCity = useCallback(
@@ -197,28 +193,28 @@ function CitiesProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [username]
+    [username],
   );
 
   const updateCity = useCallback(
     async (id: string, updates: CityUpdate): Promise<City | null> => {
       if (!username) return null;
 
-      dispatch({ type: "loading" });
       try {
         const updated = await citiesApi.updateCity(username, id, updates);
         dispatch({ type: "city/loaded", payload: updated });
         return updated;
       } catch (err) {
         console.error("Failed to update city:", err);
-        dispatch({
-          type: "error",
-          payload: errorMessage(err, "Couldn't update that city."),
-        });
+        if (updates.visitCount === undefined)
+          dispatch({
+            type: "error",
+            payload: errorMessage(err, "Couldn't update that city."),
+          });
         throw err;
       }
     },
-    [username]
+    [username],
   );
 
   const addMemory = useCallback(
@@ -234,7 +230,7 @@ function CitiesProvider({ children }: { children: ReactNode }) {
         throw err;
       }
     },
-    [username]
+    [username],
   );
 
   const deleteMemory = useCallback(
@@ -250,7 +246,7 @@ function CitiesProvider({ children }: { children: ReactNode }) {
         throw err;
       }
     },
-    [username]
+    [username],
   );
 
   const value = useMemo<CitiesContextValue>(
@@ -279,7 +275,7 @@ function CitiesProvider({ children }: { children: ReactNode }) {
       addMemory,
       deleteMemory,
       clearError,
-    ]
+    ],
   );
 
   return (
