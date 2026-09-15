@@ -44,6 +44,16 @@ type CitiesApiMock = {
   deleteCity: ReturnType<
     typeof vi.fn<(username: string, id: string) => Promise<void>>
   >;
+  addMemory: ReturnType<
+    typeof vi.fn<
+      (username: string, cityId: string, dataUri: string) => Promise<void>
+    >
+  >;
+  deleteMemory: ReturnType<
+    typeof vi.fn<
+      (username: string, cityId: string, memoryId: string) => Promise<void>
+    >
+  >;
 };
 
 const citiesApi = vi.hoisted<CitiesApiMock>(() => ({
@@ -52,6 +62,8 @@ const citiesApi = vi.hoisted<CitiesApiMock>(() => ({
   createCity: vi.fn(),
   updateCity: vi.fn(),
   deleteCity: vi.fn(),
+  addMemory: vi.fn(),
+  deleteMemory: vi.fn(),
 }));
 
 vi.mock("../services/cities", () => citiesApi);
@@ -136,6 +148,8 @@ function configureFakeCitiesService(fakeCitiesService: FakeCitiesService) {
   citiesApi.createCity.mockImplementation(fakeCitiesService.createCity);
   citiesApi.updateCity.mockImplementation(fakeCitiesService.updateCity);
   citiesApi.deleteCity.mockImplementation(fakeCitiesService.deleteCity);
+  citiesApi.addMemory.mockImplementation(fakeCitiesService.addMemory);
+  citiesApi.deleteMemory.mockImplementation(fakeCitiesService.deleteMemory);
 }
 
 export function renderApp({
