@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Unsubscribe } from "firebase/database";
-import { MemoryRouter, Navigate, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
 
 import CityPage from "../components/City";
@@ -10,7 +10,9 @@ import CountriesList from "../components/CountriesList";
 import Form from "../components/Form";
 import { CitiesProvider } from "../context/CitiesContext";
 import ProtectedRoute from "../pages/ProtectedRoute";
+import AppIndexRedirect from "../pages/AppIndexRedirect";
 import AppLayout from "../pages/AppLayout";
+import Map from "../components/Map";
 import type { City, CityUpdate, NewCity } from "../types";
 import { PHONE_MEDIA_QUERY } from "../hooks/useIsPhone";
 import {
@@ -158,7 +160,8 @@ export function renderApp({
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate replace to="cities" />} />
+              <Route index element={<AppIndexRedirect />} />
+              <Route path="map" element={<Map />} />
               <Route path="cities" element={<CityList />} />
               <Route path="countries" element={<CountriesList />} />
               <Route path="cities/:id" element={<CityPage />} />

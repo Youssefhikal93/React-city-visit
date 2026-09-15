@@ -1,27 +1,36 @@
-import SideBar from "../components/SideBar";
+import { Outlet, useLocation } from "react-router-dom";
+
+import BottomBar from "../components/BottomBar";
+import AppNav from "../components/AppNav";
 import Map from "../components/Map";
+import SideBar from "../components/SideBar";
 import User from "../components/User";
+import { useIsPhone } from "../hooks/useIsPhone";
 
-// function AppLayout() {
-//   return (
-//     <div className="h-screen p-6 md:p-3 flex flex-row md:flex-col relative overscroll-none">
-//       <SideBar />
-//       <Map />
-//       <User />
-//     </div>
-//   );
-// }
-
-// export default AppLayout;
 function AppLayout() {
+  const isPhone = useIsPhone();
+  const { pathname } = useLocation();
+  const routedView = <Outlet />;
+
+  if (isPhone) {
+    const isMapView = pathname === "/app/map";
+
+    return (
+      <>
+        <div className="h-screen w-screen bg-dark-0 pb-16">
+          {isMapView ? routedView : <SideBar>{routedView}</SideBar>}
+        </div>
+        <BottomBar />
+        <User />
+      </>
+    );
+  }
+
   return (
     <>
       <div className="h-screen w-screen bg-dark-0 ">
         <div className="grid grid-rows-2 md:grid-cols-2 h-full gap-4  md:gap-2 sm:gap-1">
-          {/* Sidebar */}
-          <SideBar />
-
-          {/* Map */}
+          <SideBar navigation={<AppNav />}>{routedView}</SideBar>
           <Map />
         </div>
       </div>
