@@ -1,7 +1,36 @@
 import type { City, Position } from "../types";
 
 export type MapSearchResult =
-  | { kind: "savedCity"; city: City };
+  | { kind: "savedCity"; city: City }
+  | { kind: "worldPlace"; displayName: string; position: Position };
+
+export type WorldPlaceSearchStatus =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "results"; places: WorldPlaceSearchResult[] }
+  | { kind: "noResults" }
+  | { kind: "failed" };
+
+export type WorldPlaceSearchResult = Extract<
+  MapSearchResult,
+  { kind: "worldPlace" }
+>;
+
+type SavedCitySearchResult = Extract<MapSearchResult, { kind: "savedCity" }>;
+
+export type WorldPlaceFetch = (
+  url: string,
+  options: { signal: AbortSignal; headers: HeadersInit }
+) => Promise<{ ok: boolean; json: () => Promise<unknown> }>;
+
+export interface WorldPlaceSearch {
+  searchAfterPause(query: string): void;
+  searchNow(query: string): void;
+  dispose(): void;
+}
+
+const WORLD_SEARCH_DELAY_MS = 1_000;
+const WORLD_SEARCH_LIMIT = 5;
 
 export type PendingPinState =
   | { kind: "none" }
@@ -61,7 +90,7 @@ export function cityDetailTarget(id: string, position: Position): string {
 export function searchSavedCities(
   cities: City[],
   query: string
-): MapSearchResult[] {
+): SavedCitySearchResult[] {
   const normalizedQuery = query.trim().toLowerCase();
   if (normalizedQuery.length === 0) return [];
 
@@ -73,6 +102,126 @@ export function searchSavedCities(
       );
     })
     .map((city) => ({ kind: "savedCity", city }));
+}
+
+export function createWorldPlaceSearch(
+  fetchWorldPlaces: WorldPlaceFetch,
+  onStatusChange: (status: WorldPlaceSearchStatus) => void
+): WorldPlaceSearch {
+  return new WorldPlaceSearchController(fetchWorldPlaces, onStatusChange);
+}
+
+class WorldPlaceSearchController implements WorldPlaceSearch {
+  private abortController: AbortController | null = null;
+  private lookupTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastRequestStartedAt = -WORLD_SEARCH_DELAY_MS;
+  private requestVersion = 0;
+
+  constructor(
+    private readonly fetchWorldPlaces: WorldPlaceFetch,
+    private readonly onStatusChange: (status: WorldPlaceSearchStatus) => void
+  ) {}
+
+  searchAfterPause(query: string): void {
+    this.schedule(query, WORLD_SEARCH_DELAY_MS);
+  }
+
+  searchNow(query: string): void {
+    this.schedule(query, 0);
+  }
+
+  dispose(): void {
+    this.cancelCurrentLookup();
+  }
+
+  private schedule(query: string, debounceDelay: number): void {
+    this.cancelCurrentLookup();
+    const trimmedQuery = query.trim();
+    this.onStatusChange({ kind: "idle" });
+    if (trimmedQuery.length === 0) return;
+
+    const rateLimitDelay = Math.max(
+      0,
+      this.lastRequestStartedAt + WORLD_SEARCH_DELAY_MS - Date.now()
+    );
+    const delay = Math.max(debounceDelay, rateLimitDelay);
+    const requestVersion = this.requestVersion;
+    this.lookupTimer = setTimeout(() => {
+      this.lookupTimer = null;
+      void this.lookup(trimmedQuery, requestVersion);
+    }, delay);
+  }
+
+  private cancelCurrentLookup(): void {
+    this.requestVersion += 1;
+    if (this.lookupTimer !== null) clearTimeout(this.lookupTimer);
+    this.lookupTimer = null;
+    this.abortController?.abort();
+    this.abortController = null;
+  }
+
+  private async lookup(query: string, requestVersion: number): Promise<void> {
+    const abortController = new AbortController();
+    this.abortController = abortController;
+    this.lastRequestStartedAt = Date.now();
+    this.onStatusChange({ kind: "loading" });
+
+    try {
+      const response = await this.fetchWorldPlaces(nominatimSearchUrl(query), {
+        signal: abortController.signal,
+        headers: { Accept: "application/json" },
+      });
+      if (requestVersion !== this.requestVersion) return;
+      if (!response.ok) {
+        this.onStatusChange({ kind: "failed" });
+        return;
+      }
+
+      const places = worldPlacesFromPayload(await response.json());
+      if (requestVersion !== this.requestVersion) return;
+      this.onStatusChange(
+        places.length > 0 ? { kind: "results", places } : { kind: "noResults" }
+      );
+    } catch (error: unknown) {
+      if (requestVersion !== this.requestVersion || isAbortError(error)) return;
+      this.onStatusChange({ kind: "failed" });
+    }
+  }
+}
+
+function nominatimSearchUrl(query: string): string {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("q", query);
+  url.searchParams.set("limit", String(WORLD_SEARCH_LIMIT));
+  return url.toString();
+}
+
+function worldPlacesFromPayload(payload: unknown): WorldPlaceSearchResult[] {
+  if (!Array.isArray(payload)) return [];
+
+  return payload.flatMap((place) => {
+    if (!isNominatimPlace(place)) return [];
+    const position = { lat: Number(place.lat), lng: Number(place.lon) };
+    if (!Number.isFinite(position.lat) || !Number.isFinite(position.lng)) return [];
+    return [{ kind: "worldPlace" as const, displayName: place.display_name, position }];
+  });
+}
+
+function isNominatimPlace(
+  place: unknown
+): place is { display_name: string; lat: string; lon: string } {
+  if (typeof place !== "object" || place === null) return false;
+  const candidate = place as Record<string, unknown>;
+  return (
+    typeof candidate.display_name === "string" &&
+    typeof candidate.lat === "string" &&
+    typeof candidate.lon === "string"
+  );
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
 }
 
 export function positionFromQuery(
