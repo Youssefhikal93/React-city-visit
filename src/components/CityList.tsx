@@ -14,7 +14,7 @@ function CityList() {
     );
 
   return (
-    <>
+    <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center justify-between px-2 pt-1 pb-0 mb-2">
         <h2 className="text-sm font-bold text-light-2 flex items-center gap-2">
           <span className="text-brand-1 text-base">📍</span>
@@ -24,14 +24,14 @@ function CityList() {
           </span>
         </h2>
       </div>
-      <div className="w-full h-[70vh] overflow-y-auto flex flex-col gap-3 list-none bg-dark-2 rounded-lg p-2 scrollbar">
+      <div className="w-full min-h-0 flex-1 overflow-y-auto bg-dark-2 rounded-lg p-2 scrollbar">
         <ul className="">
           {cities.map((city) => (
             <CityItem city={city} key={city.id} />
           ))}
         </ul>
       </div>
-    </>
+    </div>
   );
 }
 
