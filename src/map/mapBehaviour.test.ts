@@ -7,6 +7,7 @@ import {
   mapViewForPositions,
   pendingPinNavigationTarget,
   pendingPinReducer,
+  resolveMapTarget,
   createWorldPlaceSearch,
   searchSavedCities,
   type WorldPlaceFetch,
@@ -107,6 +108,75 @@ describe("initial map views", () => {
       southWest: { lat: 40.7128, lng: -74.006 },
       northEast: { lat: 59.3293, lng: 18.0686 },
       padding: [32, 32],
+    });
+  });
+});
+
+describe("map targets", () => {
+  const paris = aCity({
+    id: "paris",
+    cityName: "Paris",
+    country: "France",
+    position: { lat: 48.8566, lng: 2.3522 },
+  });
+  const lyon = aCity({
+    id: "lyon",
+    cityName: "Lyon",
+    country: "France",
+    position: { lat: 45.764, lng: 4.8357 },
+  });
+  const stockholm = aCity({
+    id: "stockholm",
+    country: "Sweden",
+    position: { lat: 59.3293, lng: 18.0686 },
+  });
+
+  test("resolves a City target and opens that City's popup", () => {
+    expect(resolveMapTarget("?cityId=paris", [paris, lyon])).toEqual({
+      kind: "city",
+      city: paris,
+      view: {
+        kind: "center",
+        position: paris.position,
+        zoom: SINGLE_CITY_ZOOM,
+      },
+    });
+  });
+
+  test("ignores a City target that is no longer in the Account's Cities", () => {
+    expect(resolveMapTarget("?cityId=missing", [paris])).toBeNull();
+  });
+
+  test("fits the map to several Cities in a Country", () => {
+    expect(resolveMapTarget("?country=France", [paris, lyon, stockholm])).toEqual({
+      kind: "country",
+      country: "France",
+      view: {
+        kind: "bounds",
+        southWest: { lat: lyon.position.lat, lng: paris.position.lng },
+        northEast: { lat: paris.position.lat, lng: lyon.position.lng },
+        padding: [32, 32],
+      },
+    });
+  });
+
+  test("centers the map for a Country with one City", () => {
+    expect(resolveMapTarget("?country=Sweden", [paris, stockholm])).toEqual({
+      kind: "country",
+      country: "Sweden",
+      view: {
+        kind: "center",
+        position: stockholm.position,
+        zoom: SINGLE_CITY_ZOOM,
+      },
+    });
+  });
+
+  test("uses the world view when a Country target matches no Cities", () => {
+    expect(resolveMapTarget("?country=Japan", [paris, stockholm])).toEqual({
+      kind: "country",
+      country: "Japan",
+      view: DEFAULT_WORLD_VIEW,
     });
   });
 });

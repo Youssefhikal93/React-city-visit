@@ -19,6 +19,7 @@ import {
   createFakeCitiesService,
   type FakeCitiesService,
 } from "./fakeCitiesService";
+import CurrentLocation from "./CurrentLocation";
 
 type CitiesApiMock = {
   subscribeToCities: ReturnType<
@@ -182,6 +183,7 @@ export function renderApp({
               <Route path="form" element={<Form />} />
             </Route>
           </Routes>
+          <CurrentLocation />
         </CitiesProvider>
       </MemoryRouter>
     ),

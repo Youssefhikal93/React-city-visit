@@ -1,27 +1,35 @@
+import { Link } from "react-router-dom";
+
+import { mapCountryTarget } from "../map/mapBehaviour";
 import type { Country } from "../types";
 
 function CountryItem({ country }: { country: Country }) {
   return (
-    <li className="flex min-h-28 flex-col items-center justify-center gap-2 text-base font-semibold bg-dark-2 rounded-xl px-4 py-4 border border-dark-2/50">
-      <div className="flex items-center justify-center w-12 h-12 bg-light-2/10 rounded-lg border border-light-2/20">
-        <img
-          src={`https://flagcdn.com/32x24/${country.emoji.toLowerCase()}.png`}
-          alt={`Flag of ${country.country}`}
-          className="w-8 h-6 object-cover rounded"
-          onError={(e) => {
-            // Fall back to the emoji span sitting right after the flag image.
-            const image = e.currentTarget;
-            image.style.display = "none";
-            const fallback = image.nextElementSibling;
-            if (fallback instanceof HTMLElement)
-              fallback.style.display = "block";
-          }}
-        />
-        <span className="text-2xl leading-none hidden">{country.emoji}</span>
-      </div>
-      <div className="break-words text-light-2 text-center font-medium leading-tight">
-        {country.country}
-      </div>
+    <li>
+      <Link
+        to={mapCountryTarget(country.country)}
+        aria-label={`Show ${country.country} on map`}
+        className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-xl border border-dark-2/50 bg-dark-2 px-4 py-4 text-base font-semibold focus:outline-none focus:ring-2 focus:ring-brand-2"
+      >
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-light-2/20 bg-light-2/10">
+          <img
+            src={`https://flagcdn.com/32x24/${country.emoji.toLowerCase()}.png`}
+            alt={`Flag of ${country.country}`}
+            className="h-6 w-8 rounded object-cover"
+            onError={(event) => {
+              const image = event.currentTarget;
+              image.style.display = "none";
+              const fallback = image.nextElementSibling;
+              if (fallback instanceof HTMLElement)
+                fallback.style.display = "block";
+            }}
+          />
+          <span className="hidden text-2xl leading-none">{country.emoji}</span>
+        </div>
+        <div className="break-words text-center font-medium leading-tight text-light-2">
+          {country.country}
+        </div>
+      </Link>
     </li>
   );
 }
