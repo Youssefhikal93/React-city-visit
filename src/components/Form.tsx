@@ -6,6 +6,7 @@ import Spinner from "./Spinner";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useCities } from "../context/CitiesContext";
+import { reverseGeocode } from "../services/geocoding";
 
 export function convertToEmoji(countryCode: string) {
   return (
@@ -36,22 +37,14 @@ function Form() {
       try {
         setIsLoadingGeoCoding(true);
         setError("");
-        const res = await fetch(
-          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}`
-        );
-        const data = await res.json();
+        const place = await reverseGeocode({
+          lat: Number(lat),
+          lng: Number(lng),
+        });
 
-        if (!data.countryCode) {
-          throw new Error(
-            "This location doesn't appear to be a country. Please click somewhere else 📍"
-          );
-        }
-
-        setCityName(
-          data.city || data.locality || data.principalSubdivision || ""
-        );
-        setCountry(data.countryName);
-        setEmoji(data.countryCode.toLowerCase());
+        setCityName(place.cityName);
+        setCountry(place.country);
+        setEmoji(place.countryCode);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Could not look up that location.");
       } finally {

@@ -18,10 +18,12 @@ import markerIconUrl from "leaflet/dist/images/marker-icon.png";
 import markerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 import { useCities } from "../context/CitiesContext";
+import { reverseGeocode, type PlaceName } from "../services/geocoding";
 import { useGeolocation } from "../hooks/useGeoLocation";
 import { useURLPosition } from "../hooks/useURLPosition";
 import {
   DEFAULT_WORLD_VIEW,
+  LOCATED_POSITION_ZOOM,
   NO_PENDING_PIN,
   cityDetailTarget,
   mapViewForPositions,
@@ -104,6 +106,17 @@ function Map() {
     dispatchPendingPin({ type: "searchResultPicked", position: place.position });
   }
 
+  // Locating is nearly always a prelude to adding where you are standing, so
+  // drop the pending pin too: the popup names the place and confirming opens
+  // the form already filled in with this Position.
+  useEffect(() => {
+    if (!positionGeoLocation) return;
+    dispatchPendingPin({
+      type: "searchResultPicked",
+      position: positionGeoLocation,
+    });
+  }, [positionGeoLocation]);
+
   return (
     <div className="relative h-full w-full flex-1 overflow-hidden rounded-lg bg-dark-2 shadow-2xl sm:rounded-lg sm:shadow-xl md:h-screen md:rounded-none md:shadow-lg">
       <MapContainer
@@ -168,7 +181,12 @@ function Map() {
           positions={cities.map((city) => city.position)}
           shouldSkip={urlPosition !== null || mapTarget !== null}
         />
-        {requestedPosition && <ChangeCenter position={requestedPosition} />}
+        {requestedPosition && (
+          <ChangeCenter
+            position={requestedPosition}
+            zoom={positionGeoLocation ? LOCATED_POSITION_ZOOM : undefined}
+          />
+        )}
         <ApplyMapTarget target={mapTarget} markers={cityMarkers.current} />
         {searchTarget && (
           <FlyToSearchResult
@@ -300,15 +318,19 @@ function applyMapView(map: LeafletMap, view: MapView): void {
   map.fitBounds(bounds, { padding: view.padding });
 }
 
-function ChangeCenter({ position }: { position: Position }) {
+/**
+ * Keeping the current zoom left an Account looking at their street from the
+ * world view, which reads as "nothing happened".
+ */
+function ChangeCenter({ position, zoom }: { position: Position; zoom?: number }) {
   const map = useMap();
 
   useEffect(() => {
-    map.setView([position.lat, position.lng], map.getZoom(), {
+    map.setView([position.lat, position.lng], zoom ?? map.getZoom(), {
       animate: true,
       duration: 1,
     });
-  }, [map, position.lat, position.lng]);
+  }, [map, position.lat, position.lng, zoom]);
 
   return null;
 }
@@ -321,6 +343,27 @@ function DetectClick({ onTap }: { onTap: (position: Position) => void }) {
   return null;
 }
 
+/**
+ * Names the Position under the pending pin, so the popup can offer "Add
+ * Valencia" rather than the anonymous "Add city here?".
+ */
+function usePlaceName(position: Position): PlaceName | null {
+  const [placeName, setPlaceName] = useState<PlaceName | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setPlaceName(null);
+
+    reverseGeocode(position, controller.signal)
+      .then(setPlaceName)
+      .catch(() => setPlaceName(null));
+
+    return () => controller.abort();
+  }, [position.lat, position.lng]);
+
+  return placeName;
+}
+
 function PendingPin({
   onConfirm,
   onDismiss,
@@ -331,22 +374,34 @@ function PendingPin({
   position: Position;
 }) {
   const marker = useRef<LeafletMarker | null>(null);
+  const placeName = usePlaceName(position);
 
   useEffect(() => {
     marker.current?.openPopup();
   }, [position.lat, position.lng]);
 
+  const place = placeName?.cityName || placeName?.country;
+
   return (
     <Marker icon={cityIcon} position={[position.lat, position.lng]} ref={marker}>
       <Popup closeOnEscapeKey eventHandlers={{ remove: onDismiss }}>
         <div className="flex min-w-48 flex-col gap-3 p-2 text-dark-0">
-          <span className="text-base font-semibold">Add city here?</span>
+          <span className="flex items-center gap-2 text-base font-semibold">
+            {placeName && (
+              <img
+                alt={`Flag of ${placeName.country}`}
+                className="h-4 w-6 rounded object-cover"
+                src={`https://flagcdn.com/24x18/${placeName.countryCode}.png`}
+              />
+            )}
+            {place ? `Add ${place}?` : "Add city here?"}
+          </span>
           <button
             className="min-h-11 rounded bg-brand-2 px-3 py-2 font-bold text-dark-1 focus:outline-none focus:ring-2 focus:ring-dark-0"
             onClick={onConfirm}
             type="button"
           >
-            Add City
+            {place ? `Add ${place}` : "Add City"}
           </button>
         </div>
       </Popup>

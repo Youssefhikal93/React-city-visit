@@ -8,6 +8,7 @@ import {
   type WorldPlaceSearchResult,
   type WorldPlaceSearchStatus,
 } from "../map/mapBehaviour";
+import { useIsPhone } from "../hooks/useIsPhone";
 import type { City } from "../types";
 
 interface MapSearchProps {
@@ -26,14 +27,17 @@ export function MapSearch({
   fetchWorldPlaces = browserFetch,
 }: MapSearchProps) {
   const [query, setQuery] = useState("");
+  const [isExpanded, setIsExpanded] = useState(false);
   const [worldSearchStatus, setWorldSearchStatus] =
     useState<WorldPlaceSearchStatus>({ kind: "idle" });
   const searchRef = useRef<HTMLDivElement>(null);
   const worldPlaceSearch = useRef<WorldPlaceSearch | null>(null);
+  const isPhone = useIsPhone();
   const results = searchSavedCities(cities, query);
 
   function clearSearch(): void {
     setQuery("");
+    setIsExpanded(false);
   }
 
   useEffect(() => {
@@ -68,9 +72,40 @@ export function MapSearch({
   const hasWorldSearchContent = worldSearchStatus.kind !== "idle";
   const hasResults = results.length > 0 || hasWorldSearchContent;
 
+  // A permanently open box eats the top of a phone screen, which is most of
+  // what there is. Collapse it to a button there and let a wide screen keep it.
+  if (isPhone && !isExpanded) {
+    return (
+      <div
+        className="absolute right-4 top-3 z-[1000]"
+        onClick={(event) => event.stopPropagation()}
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        <button
+          aria-label="Search Cities or the world"
+          className="flex h-11 w-11 items-center justify-center rounded-lg border border-dark-2 bg-dark-1/95 text-light-1 shadow-lg backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-brand-2"
+          onClick={() => setIsExpanded(true)}
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
-      className="absolute left-4 right-4 top-4 z-[1000] md:right-28"
+      className="absolute left-16 right-4 top-3 z-[1000] md:left-4 md:right-28 md:top-4"
       onClick={(event) => event.stopPropagation()}
       onPointerDown={(event) => event.stopPropagation()}
       ref={searchRef}
@@ -79,6 +114,7 @@ export function MapSearch({
         Search Cities or the world
       </label>
       <input
+        autoFocus={isPhone}
         className="min-h-11 w-full rounded-lg border border-dark-2 bg-light-1 px-4 py-2 text-dark-0 shadow-lg outline-none placeholder:text-dark-2 focus:ring-2 focus:ring-brand-2"
         id="map-search"
         onChange={(event) => setQuery(event.target.value)}
