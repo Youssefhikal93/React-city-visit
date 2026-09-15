@@ -39,6 +39,8 @@ interface CitiesContextValue extends CitiesState {
   createCity: (newCity: NewCity) => Promise<CreateCityResult>;
   deleteCity: (id: string) => Promise<void>;
   updateCity: (id: string, updates: CityUpdate) => Promise<City | null>;
+  addMemory: (cityId: string, dataUri: string) => Promise<void>;
+  deleteMemory: (cityId: string, memoryId: string) => Promise<void>;
   clearError: () => void;
 }
 
@@ -55,8 +57,18 @@ function reducer(state: CitiesState, action: CitiesAction): CitiesState {
   switch (action.type) {
     case "loading":
       return { ...state, isLoading: true };
-    case "cities/loaded":
-      return { ...state, cities: action.payload, isLoading: false, error: "" };
+    case "cities/loaded": {
+      const currentCity = state.currentCity
+        ? action.payload.find((city) => city.id === state.currentCity?.id) ?? null
+        : null;
+      return {
+        ...state,
+        cities: action.payload,
+        currentCity,
+        isLoading: false,
+        error: "",
+      };
+    }
     case "city/loaded":
       return { ...state, currentCity: action.payload, isLoading: false };
     case "city/created":
@@ -209,6 +221,38 @@ function CitiesProvider({ children }: { children: ReactNode }) {
     [username]
   );
 
+  const addMemory = useCallback(
+    async (cityId: string, dataUri: string): Promise<void> => {
+      if (!username) throw new Error("Not authenticated");
+
+      try {
+        await citiesApi.addMemory(username, cityId, dataUri);
+      } catch (err) {
+        console.error("Failed to add Memory:", err);
+        const message = errorMessage(err, "Couldn't save that Memory.");
+        dispatch({ type: "error", payload: message });
+        throw err;
+      }
+    },
+    [username]
+  );
+
+  const deleteMemory = useCallback(
+    async (cityId: string, memoryId: string): Promise<void> => {
+      if (!username) throw new Error("Not authenticated");
+
+      try {
+        await citiesApi.deleteMemory(username, cityId, memoryId);
+      } catch (err) {
+        console.error("Failed to delete Memory:", err);
+        const message = errorMessage(err, "Couldn't delete that Memory.");
+        dispatch({ type: "error", payload: message });
+        throw err;
+      }
+    },
+    [username]
+  );
+
   const value = useMemo<CitiesContextValue>(
     () => ({
       cities,
@@ -219,6 +263,8 @@ function CitiesProvider({ children }: { children: ReactNode }) {
       createCity,
       deleteCity,
       updateCity,
+      addMemory,
+      deleteMemory,
       clearError,
     }),
     [
@@ -230,6 +276,8 @@ function CitiesProvider({ children }: { children: ReactNode }) {
       createCity,
       deleteCity,
       updateCity,
+      addMemory,
+      deleteMemory,
       clearError,
     ]
   );

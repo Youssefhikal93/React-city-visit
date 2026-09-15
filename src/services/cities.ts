@@ -12,12 +12,35 @@ import {
 import { db } from "./firebase";
 import type { City, CityUpdate, NewCity, StoredCity } from "../types";
 
+const LEGACY_MEMORY_ID = "legacy-image";
+
 function citiesRef(username: string) {
   return ref(db, `users/${username}/cities`);
 }
 
 function cityRef(username: string, id: string) {
   return ref(db, `users/${username}/cities/${id}`);
+}
+
+function memoriesRef(username: string, cityId: string) {
+  return ref(db, `users/${username}/cities/${cityId}/memories`);
+}
+
+function memoryRef(username: string, cityId: string, memoryId: string) {
+  return ref(db, `users/${username}/cities/${cityId}/memories/${memoryId}`);
+}
+
+function compareMemoryIds(firstId: string, secondId: string): number {
+  if (firstId === LEGACY_MEMORY_ID) return -1;
+  if (secondId === LEGACY_MEMORY_ID) return 1;
+  return firstId.localeCompare(secondId);
+}
+
+async function readStoredCity(username: string, id: string): Promise<StoredCity> {
+  const snapshot = await get(cityRef(username, id));
+  if (!snapshot.exists())
+    throw new Error("That city is no longer in your list.");
+  return snapshot.val() as StoredCity;
 }
 
 /**
@@ -31,7 +54,16 @@ function toCityList(value: Record<string, StoredCity> | null): City[] {
     .sort((a, b) => a.createdAt - b.createdAt);
 }
 
-function normalizeCity(id: string, city: StoredCity): City {
+export function normalizeCity(id: string, city: StoredCity): City {
+  const memories =
+    city.memories === undefined
+      ? city.image
+        ? [{ id: LEGACY_MEMORY_ID, dataUri: city.image }]
+        : []
+      : Object.entries(city.memories)
+          .sort(([firstId], [secondId]) => compareMemoryIds(firstId, secondId))
+          .map(([memoryId, dataUri]) => ({ id: memoryId, dataUri }));
+
   return {
     id,
     cityName: city.cityName ?? "",
@@ -39,7 +71,7 @@ function normalizeCity(id: string, city: StoredCity): City {
     emoji: city.emoji ?? "",
     date: city.date ?? null,
     notes: city.notes ?? "",
-    image: city.image ?? null,
+    memories,
     createdAt: city.createdAt ?? 0,
     position: {
       lat: Number(city.position?.lat ?? 0),
@@ -73,10 +105,7 @@ export function subscribeToCities(
 }
 
 export async function fetchCity(username: string, id: string): Promise<City> {
-  const snapshot = await get(cityRef(username, id));
-  if (!snapshot.exists())
-    throw new Error("That city is no longer in your list.");
-  return normalizeCity(id, snapshot.val() as StoredCity);
+  return normalizeCity(id, await readStoredCity(username, id));
 }
 
 export async function createCity(username: string, city: NewCity): Promise<City> {
@@ -111,4 +140,51 @@ export async function updateCity(
 
 export async function deleteCity(username: string, id: string): Promise<void> {
   await remove(cityRef(username, id));
+}
+
+export async function addMemory(
+  username: string,
+  cityId: string,
+  dataUri: string
+): Promise<void> {
+  const storedCity = await readStoredCity(username, cityId);
+  if (!storedCity.image) {
+    await push(memoriesRef(username, cityId), dataUri);
+    return;
+  }
+
+  const newMemory = push(memoriesRef(username, cityId));
+  if (!newMemory.key)
+    throw new Error("Firebase did not return a key for the new Memory.");
+
+  await update(cityRef(username, cityId), {
+    memories: {
+      ...storedCity.memories,
+      [LEGACY_MEMORY_ID]: storedCity.image,
+      [newMemory.key]: dataUri,
+    },
+    image: null,
+  });
+}
+
+export async function deleteMemory(
+  username: string,
+  cityId: string,
+  memoryId: string
+): Promise<void> {
+  if (memoryId !== LEGACY_MEMORY_ID) {
+    await remove(memoryRef(username, cityId, memoryId));
+    return;
+  }
+
+  const storedCity = await readStoredCity(username, cityId);
+  if (!storedCity.image) {
+    await remove(memoryRef(username, cityId, memoryId));
+    return;
+  }
+
+  await update(cityRef(username, cityId), {
+    memories: storedCity.memories ?? {},
+    image: null,
+  });
 }

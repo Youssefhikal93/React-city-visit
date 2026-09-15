@@ -1,9 +1,10 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { lazy, Suspense } from "react";
 
 import { CitiesProvider } from "./context/CitiesContext";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./pages/ProtectedRoute";
+import AppIndexRedirect from "./pages/AppIndexRedirect";
 
 // import HomePage from "./pages/HomePage";
 // import Pricing from "./pages/Pricing";
@@ -22,6 +23,7 @@ import CityList from "./components/CityList";
 import CountriesList from "./components/CountriesList";
 import City from "./components/City";
 import Form from "./components/Form";
+import MapRoute from "./pages/MapRoute";
 import SpinnerFullPage from "./components/SpinnerFullPage";
 
 import Signup from "./pages/SignUp";
@@ -46,7 +48,8 @@ function App() {
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<Navigate replace to="cities" />} />
+                <Route index element={<AppIndexRedirect />} />
+                <Route path="map" element={<MapRoute />} />
                 <Route path="cities" element={<CityList />} />
                 <Route path="countries" element={<CountriesList />} />
                 <Route path="cities/:id" element={<City />} />
