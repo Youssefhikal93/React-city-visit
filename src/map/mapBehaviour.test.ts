@@ -7,7 +7,9 @@ import {
   mapViewForPositions,
   pendingPinNavigationTarget,
   pendingPinReducer,
+  searchSavedCities,
 } from "./mapBehaviour";
+import { aCity } from "../test/fakeCitiesService";
 
 describe("pending pins", () => {
   const firstPosition = { lat: 59.3293, lng: 18.0686 };
@@ -103,5 +105,56 @@ describe("initial map views", () => {
       northEast: { lat: 59.3293, lng: 18.0686 },
       padding: [32, 32],
     });
+  });
+});
+
+describe("saved City search", () => {
+  const cities = [
+    aCity({ cityName: "Paris", country: "France" }),
+    aCity({ cityName: "Stockholm", country: "Sweden" }),
+    aCity({ cityName: "Riga", country: "Latvia" }),
+  ];
+
+  test("matches a City name", () => {
+    expect(searchSavedCities(cities, "Paris")).toEqual([
+      { kind: "savedCity", city: cities[0] },
+    ]);
+  });
+
+  test("matches a Country name", () => {
+    expect(searchSavedCities(cities, "Sweden")).toEqual([
+      { kind: "savedCity", city: cities[1] },
+    ]);
+  });
+
+  test("matches City names case-insensitively", () => {
+    expect(searchSavedCities(cities, "PARIS")).toEqual([
+      { kind: "savedCity", city: cities[0] },
+    ]);
+  });
+
+  test("matches a substring in the middle of a City name", () => {
+    expect(searchSavedCities(cities, "ris")).toEqual([
+      { kind: "savedCity", city: cities[0] },
+    ]);
+  });
+
+  test("preserves the Cities' own order", () => {
+    expect(searchSavedCities(cities, "a")).toEqual([
+      { kind: "savedCity", city: cities[0] },
+      { kind: "savedCity", city: cities[2] },
+    ]);
+  });
+
+  test("returns nothing for an empty query", () => {
+    expect(searchSavedCities(cities, "")).toEqual([]);
+  });
+
+  test("returns nothing for a whitespace-only query", () => {
+    expect(searchSavedCities(cities, "   ")).toEqual([]);
+  });
+
+  test("returns nothing when no saved City matches", () => {
+    expect(searchSavedCities(cities, "Tokyo")).toEqual([]);
   });
 });

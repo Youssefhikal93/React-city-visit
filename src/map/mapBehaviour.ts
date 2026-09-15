@@ -1,4 +1,7 @@
-import type { Position } from "../types";
+import type { City, Position } from "../types";
+
+export type MapSearchResult =
+  | { kind: "savedCity"; city: City };
 
 export type PendingPinState =
   | { kind: "none" }
@@ -53,6 +56,23 @@ export function pendingPinNavigationTarget(
 
 export function cityDetailTarget(id: string, position: Position): string {
   return `/app/cities/${id}?lat=${position.lat}&lng=${position.lng}`;
+}
+
+export function searchSavedCities(
+  cities: City[],
+  query: string
+): MapSearchResult[] {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (normalizedQuery.length === 0) return [];
+
+  return cities
+    .filter((city) => {
+      return (
+        city.cityName.toLowerCase().includes(normalizedQuery) ||
+        city.country.toLowerCase().includes(normalizedQuery)
+      );
+    })
+    .map((city) => ({ kind: "savedCity", city }));
 }
 
 export function positionFromQuery(
