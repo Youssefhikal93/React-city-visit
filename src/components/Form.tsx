@@ -1,4 +1,3 @@
-// export default Form;
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useURLPosition } from "../hooks/useURLPosition";
@@ -91,12 +90,11 @@ function Form() {
 
   return (
     <form
-      className={`bg-dark-2 rounded-xl shadow-lg p-6 md:p-8 w-full max-w-lg mx-auto flex flex-col gap-5 my-8 font-manrope ${
+      className={`min-w-0 bg-dark-2 rounded-xl shadow-lg p-4 sm:p-6 md:p-8 w-full max-w-lg mx-auto flex flex-col gap-5 my-3 sm:my-8 font-manrope ${
         isLoading ? "opacity-30 pointer-events-none" : ""
       }`}
       onSubmit={handleSubmit}
     >
-      {/* City Name */}
       <div className="flex flex-col gap-1 relative">
         <label
           htmlFor="cityName"
@@ -108,7 +106,7 @@ function Form() {
           id="cityName"
           onChange={(e) => setCityName(e.target.value)}
           value={cityName}
-          className="w-full p-2 rounded-lg bg-light-2 text-dark-0 text-base border-none focus:outline-none focus:ring-2 focus:ring-brand-2 pr-12"
+          className="min-h-11 w-full rounded-lg border-none bg-light-2 p-2 pr-12 text-base text-dark-0 focus:outline-none focus:ring-2 focus:ring-brand-2"
           required
         />
         {emoji && (
@@ -122,7 +120,26 @@ function Form() {
         )}
       </div>
 
-      {/* Date Picker */}
+      <div className="flex flex-col gap-1 relative">
+        <label
+          htmlFor="country"
+          className="text-sm font-semibold text-light-1 mb-1"
+        >
+          Country
+        </label>
+        <input
+          id="country"
+          value={country}
+          readOnly
+          className="min-h-11 w-full rounded-lg border-none bg-light-2 p-2 pr-12 text-base text-dark-0"
+        />
+        {emoji && (
+          <div className="absolute right-3 top-10 flex items-center">
+            {convertToEmoji(emoji)}
+          </div>
+        )}
+      </div>
+
       <div className="flex flex-col gap-1">
         <label
           htmlFor="date"
@@ -135,12 +152,13 @@ function Form() {
           onChange={(next) => next && setDate(next)}
           selected={date}
           dateFormat="dd/MM/yyyy"
-          className="w-full p-2 rounded-lg bg-light-2 text-dark-0 text-base border-none focus:outline-none focus:ring-2 focus:ring-brand-2"
+          className="min-h-11 w-full rounded-lg border-none bg-light-2 p-2 text-base text-dark-0 focus:outline-none focus:ring-2 focus:ring-brand-2"
+          wrapperClassName="w-full"
+          withPortal
           required
         />
       </div>
 
-      {/* Notes */}
       <div className="flex flex-col gap-1">
         <label
           htmlFor="notes"
@@ -153,22 +171,21 @@ function Form() {
           onChange={(e) => setNotes(e.target.value)}
           value={notes}
           rows={3}
-          className="w-full p-2 rounded-lg bg-light-2 text-dark-0 text-base border-none focus:outline-none focus:ring-2 focus:ring-brand-2 resize-none"
+          className="min-h-24 w-full resize-none rounded-lg border-none bg-light-2 p-2 text-base text-dark-0 focus:outline-none focus:ring-2 focus:ring-brand-2"
         />
       </div>
 
-      {/* Buttons */}
       <div className="flex justify-between gap-3 mt-2">
         <button
           type="submit"
-          className="flex-1 bg-brand-2 text-dark-1 font-bold uppercase rounded-lg px-4 py-2 transition-colors duration-200 hover:bg-brand-1 hover:text-dark-1 focus:outline-none focus:ring-2 focus:ring-brand-2"
+          className="min-h-11 flex-1 bg-brand-2 text-dark-1 font-bold uppercase rounded-lg px-4 py-2 transition-colors duration-200 hover:bg-brand-1 hover:text-dark-1 focus:outline-none focus:ring-2 focus:ring-brand-2"
           disabled={isLoading}
         >
           {isLoading ? "Adding..." : "Add"}
         </button>
         <button
           type="button"
-          className="flex-1 bg-dark-1 text-light-2 font-bold uppercase rounded-lg px-4 py-2 transition-colors duration-200 hover:bg-dark-0 hover:text-brand-2 focus:outline-none focus:ring-2 focus:ring-brand-2"
+          className="min-h-11 flex-1 bg-dark-1 text-light-2 font-bold uppercase rounded-lg px-4 py-2 transition-colors duration-200 hover:bg-dark-0 hover:text-brand-2 focus:outline-none focus:ring-2 focus:ring-brand-2"
           onClick={(e) => {
             e.preventDefault();
             navigate(-1);
