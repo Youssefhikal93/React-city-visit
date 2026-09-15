@@ -2,14 +2,17 @@
 
 A modern travel tracking application with city management, interactive map, and travel journal.
 
-### [Live Demo](https://city-marker.onrender.com/)
+### [Live app](https://world-visit-snapshots.netlify.app/)
 
 ## Features
 
-- 🗺️ Interactive map with city markers
+- 🗺️ Interactive map: tap anywhere to drop a pin, confirm to add that City
+- 🔍 Search your saved Cities, or any place on Earth via OpenStreetMap
+- 📱 Built for a phone: Map and List views with a bottom bar and a menu
+- 🏠 Installs to an iOS or Android home screen and opens standalone
 - 🌆 City details and notes
 - 📅 Travel date tracking
-- 📸 Photo uploads for memories
+- 📸 Up to five photo Memories per City
 - 🔐 Username + 4-digit PIN sign-in, with the PIN verified by the database rules
 - ⚡ Live sync — every change lands in Firebase and appears in other tabs instantly
 - 🌓 Dark theme by default
@@ -131,7 +134,11 @@ users/
       -PabcXYZ.../           <- database push key, used as the city id
         cityName, country, emoji, date, notes
         position: { lat, lng }
-        image                <- optional base64 JPEG, resized to 400px
+        memories/            <- up to five base64 JPEGs, long side 800px
+          -PdefUVW...        <- push key, used as the memory id
+        image                <- the old single photo; read as the first
+                                Memory, and moved into memories/ on the
+                                next write. New records never have it.
         createdAt
 
 sessions/
@@ -146,17 +153,28 @@ The whole `src` tree is TypeScript in `strict` mode, with `allowJs` off.
 
 | Type | Used for |
 | --- | --- |
-| `City` | what the UI reads, id included |
+| `City` | what the UI reads, id and Memories included |
+| `Memory` | one photo on a City: an id and a base64 data URI |
 | `NewCity` | what the form submits, before an id exists |
-| `CityUpdate` | a partial edit; `image: null` clears the snapshot |
+| `CityUpdate` | a partial edit; Memories are changed through their own operations |
 | `StoredCity` | the shape actually sitting in the database |
 | `Country` | a country rolled up from the city list |
 
 ```bash
 npm run typecheck   # tsc --noEmit
 npm run lint
+npm test -- --run   # Vitest on jsdom, once
 npm run build       # typechecks, then builds
 ```
+
+### Tests
+
+`src/test/` holds the fixtures rather than the tests for one component:
+`renderApp` mounts the `/app` routes with a fixed Account, seeded Cities and a
+phone or wide viewport, backed by an in-memory fake of the cities service, so
+no test touches Firebase or the network. Leaflet cannot lay out in jsdom, so
+the map is stubbed there and its logic is tested separately as plain functions
+in `src/map/mapBehaviour.ts`, which imports nothing from Leaflet on purpose.
 
 `database.rules.json` denies everything by default, then allows a
 session that has proved its PIN to read and write that account, validates every
@@ -172,6 +190,19 @@ files and nothing else:
 | --- | --- |
 | `services/firebase.ts` | App init from env vars, `auth` and `db` handles |
 | `services/users.ts` | Username/PIN rules, account create, session open/close |
-| `services/cities.ts` | City subscribe, fetch, create, update, delete |
+| `services/cities.ts` | City subscribe, fetch, create, update, delete, Memories |
+
+`services/geocoding.ts` is the one other outside call: it names the place at a
+Position, shared by the Add City form and the map's "Add ‹place›?" popup so the
+two cannot disagree about what you tapped.
+
+### Why photos live in the database
+
+Cloud Storage for Firebase has required the paid Blaze plan for every bucket
+since February 2026, so a project on the no-cost Spark plan cannot use it.
+Memories are therefore base64 JPEGs inside the City record, resized in the
+browser to 800px on the long side. See
+[ADR-0001](docs/adr/0001-memories-stored-as-base64-in-realtime-database.md) for
+the full reasoning and the point at which it is worth revisiting.
 
 ### < Happy Traveling ! ✈️ 🌍/>
