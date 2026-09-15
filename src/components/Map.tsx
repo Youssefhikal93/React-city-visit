@@ -1,273 +1,87 @@
-// import { useNavigate, useSearchParams } from "react-router-dom";
-// import {
-//   MapContainer,
-//   TileLayer,
-//   Marker,
-//   Popup,
-//   useMap,
-//   useMapEvents,
-// } from "react-leaflet";
-// import { useEffect, useState } from "react";
-// import { useCities } from "../context/CitiesContext";
-// import { useGeolocation } from "../hooks/useGeoLocation";
-// import Button from "./Button";
-// import Spinner from "./Spinner";
-// import { useURLPosition } from "../hooks/useURLPosition";
-// function Map() {
-//   const [mapPosition, setMapPosition] = useState([58.39, 15.633]);
-//   const navigate = useNavigate();
-//   const { cities } = useCities();
-//   const {
-//     getPosition: getPositionGeoLocation,
-//     isLoading: isLoadingGeoLocation,
-//     position: positionGeoLocation,
-//   } = useGeolocation();
-
-//   const [lat, lng] = useURLPosition();
-
-//   useEffect(
-//     function () {
-//       if (lat && lng) setMapPosition([lat, lng]);
-//     },
-//     [lat, lng]
-//   );
-
-//   useEffect(
-//     function () {
-//       console.log(positionGeoLocation);
-//       if (positionGeoLocation)
-//         setMapPosition([positionGeoLocation.lat, positionGeoLocation.lng]);
-//     },
-//     [positionGeoLocation]
-//   );
-
-//   return (
-//     <div className="flex-1 h-full bg-dark-2 relative md:h-[50vh] sm:h-[40vh]">
-//       {!positionGeoLocation && (
-//         <Button type="position" onClick={getPositionGeoLocation}>
-//           {isLoadingGeoLocation ? "Loading..." : "Use your Position"}
-//         </Button>
-//       )}
-//       <MapContainer
-//         className="h-full min-h-[300px]"
-//         center={mapPosition}
-//         zoom={10}
-//         scrollWheelZoom={true}
-//       >
-//         <TileLayer
-//           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-//           url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
-//         />
-//         {cities.map((city) => (
-//           <Marker
-//             position={[city.position.lat, city.position.lng]}
-//             key={city.id}
-//           >
-//             <Popup>
-//               <span>{city.emoji}</span> <span>{city.cityName}</span>
-//             </Popup>
-//           </Marker>
-//         ))}
-//         <ChangeCenter position={mapPosition} />
-//         <DetectClick />
-//       </MapContainer>
-//     </div>
-//   );
-// }
-
-// function ChangeCenter({ position }) {
-//   const map = useMap();
-//   map.setView(position);
-//   return null;
-// }
-
-// function DetectClick() {
-//   const navigate = useNavigate();
-//   const { clearError } = useCities();
-//   useMapEvents({
-//     click: (e) => {
-//       clearError();
-//       navigate(`form?lat=${e.latlng.lat}&lng=${e.latlng.lng}`);
-//     },
-//   });
-// }
-
-// export default Map;
-// import { useNavigate } from "react-router-dom";
-// import {
-//   MapContainer,
-//   TileLayer,
-//   Marker,
-//   Popup,
-//   useMap,
-//   useMapEvents,
-// } from "react-leaflet";
-// import { useEffect, useState } from "react";
-// import { useCities } from "../context/CitiesContext";
-// import { useGeolocation } from "../hooks/useGeoLocation";
-// import Button from "./Button";
-// import Spinner from "./Spinner";
-// import { useURLPosition } from "../hooks/useURLPosition";
-
-// function Map() {
-//   const [mapPosition, setMapPosition] = useState([40, 0]);
-//   const navigate = useNavigate();
-//   const { cities } = useCities();
-//   const {
-//     getPosition: getPositionGeoLocation,
-//     isLoading: isLoadingGeoLocation,
-//     position: positionGeoLocation,
-//   } = useGeolocation();
-
-//   const [lat, lng] = useURLPosition();
-
-//   useEffect(() => {
-//     if (lat && lng) setMapPosition([lat, lng]);
-//   }, [lat, lng]);
-
-//   useEffect(() => {
-//     if (positionGeoLocation) {
-//       setMapPosition([positionGeoLocation.lat, positionGeoLocation.lng]);
-//     }
-//   }, [positionGeoLocation]);
-
-//   return (
-//     <div className="flex-2 h-full bg-dark-2 relative md:h-[50vh] sm:h-[45vh]">
-//       {!positionGeoLocation && (
-//         <Button type="position" onClick={getPositionGeoLocation}>
-//           {isLoadingGeoLocation ? (
-//             <span className="flex items-center gap-2">
-//               <Spinner small /> Loading...
-//             </span>
-//           ) : (
-//             "Use your Position"
-//           )}
-//         </Button>
-//       )}
-//       <MapContainer
-//         className="h-full w-full z-0"
-//         center={mapPosition}
-//         zoom={6}
-//         scrollWheelZoom={true}
-//         minZoom={2}
-//         maxBounds={[
-//           [-90, -180],
-//           [90, 180],
-//         ]}
-//       >
-//         <TileLayer
-//           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-//           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-//         />
-//         {cities.map((city) => (
-//           <Marker
-//             position={[city.position.lat, city.position.lng]}
-//             key={city.id}
-//           >
-//             <Popup className="text-dark-0">
-//               <div className="flex items-center gap-2">
-//                 <img
-//                   src={`https://flagcdn.com/24x18/${city.emoji.toLowerCase()}.png`}
-//                   alt={`Flag of ${city.emoji.toUpperCase()}`}
-//                   className="w-6 h-4"
-//                 />
-//                 <span className="font-semibold">{city.cityName}</span>
-//               </div>
-//             </Popup>
-//           </Marker>
-//         ))}
-//         <ChangeCenter position={mapPosition} />
-//         <DetectClick />
-//       </MapContainer>
-//     </div>
-//   );
-// }
-
-// function ChangeCenter({ position }) {
-//   const map = useMap();
-//   map.setView(position);
-//   return null;
-// }
-
-// function DetectClick() {
-//   const navigate = useNavigate();
-//   const { clearError } = useCities();
-//   useMapEvents({
-//     click: (e) => {
-//       clearError();
-//       navigate(`form?lat=${e.latlng.lat}&lng=${e.latlng.lng}`);
-//     },
-//   });
-// }
-
-// export default Map;
-// Map.jsx
-import { useNavigate } from "react-router-dom";
+import { useEffect, useReducer, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   MapContainer,
-  TileLayer,
   Marker,
   Popup,
+  TileLayer,
   useMap,
   useMapEvents,
 } from "react-leaflet";
-import { useEffect, useState } from "react";
+import {
+  Icon,
+  type LatLngBoundsExpression,
+  type Marker as LeafletMarker,
+} from "leaflet";
+import markerIconUrl from "leaflet/dist/images/marker-icon.png";
+import markerShadowUrl from "leaflet/dist/images/marker-shadow.png";
+
 import { useCities } from "../context/CitiesContext";
 import { useGeolocation } from "../hooks/useGeoLocation";
-import type { LatLngTuple } from "leaflet";
-import Button from "./Button";
-import Spinner from "./Spinner";
 import { useURLPosition } from "../hooks/useURLPosition";
+import {
+  DEFAULT_WORLD_VIEW,
+  NO_PENDING_PIN,
+  cityDetailTarget,
+  mapViewForPositions,
+  pendingPinReducer,
+  pendingPinNavigationTarget,
+  positionFromQuery,
+} from "../map/mapBehaviour";
+import type { Position } from "../types";
+import Spinner from "./Spinner";
+
+const cityIcon = new Icon({
+  iconUrl: markerIconUrl,
+  shadowUrl: markerShadowUrl,
+  iconSize: [44, 72],
+  iconAnchor: [22, 72],
+  popupAnchor: [0, -62],
+  shadowSize: [72, 72],
+  shadowAnchor: [22, 72],
+});
 
 function Map() {
-  const [mapPosition, setMapPosition] = useState<LatLngTuple>([40, 0]);
-  const { cities } = useCities();
+  const navigate = useNavigate();
+  const { cities, clearError, isLoading } = useCities();
   const {
     getPosition: getPositionGeoLocation,
     isLoading: isLoadingGeoLocation,
     position: positionGeoLocation,
   } = useGeolocation();
-
   const [lat, lng] = useURLPosition();
+  const [pendingPin, dispatchPendingPin] = useReducer(
+    pendingPinReducer,
+    NO_PENDING_PIN
+  );
+  const urlPosition = positionFromQuery(lat, lng);
+  const initialCenter = urlPosition ?? DEFAULT_WORLD_VIEW.position;
+  const requestedPosition = positionGeoLocation ?? urlPosition;
 
-  useEffect(() => {
-    if (lat && lng) setMapPosition([Number(lat), Number(lng)]);
-  }, [lat, lng]);
+  function handleMapTap(position: Position): void {
+    clearError();
+    dispatchPendingPin({ type: "tap", position });
+  }
 
-  useEffect(() => {
-    if (positionGeoLocation) {
-      setMapPosition([positionGeoLocation.lat, positionGeoLocation.lng]);
-    }
-  }, [positionGeoLocation]);
+  function handleConfirmPendingPin(): void {
+    if (pendingPin.kind === "none") return;
+
+    const target = pendingPinNavigationTarget(pendingPin);
+    dispatchPendingPin({ type: "confirm" });
+    if (target) navigate(target);
+  }
+
+  function handleDismissPendingPin(): void {
+    dispatchPendingPin({ type: "dismiss" });
+  }
 
   return (
-    <div className="flex-1 h-full w-full bg-dark-2 relative overflow-hidden rounded-lg shadow-2xl md:rounded-none md:shadow-lg md:h-screen  sm:rounded-lg sm:shadow-xl">
-      {/* Position Button */}
-      {!positionGeoLocation && (
-        <div className=" absolute bottom-1 w-full left-1/2 transform -translate-x-1/2 z-[1000]">
-          <Button type="position" onClick={getPositionGeoLocation}>
-            {isLoadingGeoLocation ? (
-              <span className="flex items-center gap-2">
-                <Spinner small />
-                <span className="hidden sm:inline">Loading...</span>
-                <span className="sm:hidden">...</span>
-              </span>
-            ) : (
-              <span>
-                <span className="hidden sm:inline">Use your Position</span>
-                <span className="sm:hidden">📍 Use your Position</span>
-              </span>
-            )}
-          </Button>
-        </div>
-      )}
-
-      {/* Map Container */}
+    <div className="relative h-full w-full flex-1 overflow-hidden rounded-lg bg-dark-2 shadow-2xl sm:rounded-lg sm:shadow-xl md:h-screen md:rounded-none md:shadow-lg">
       <MapContainer
         className="h-full w-full"
-        center={mapPosition}
-        zoom={6}
-        scrollWheelZoom={true}
+        center={[initialCenter.lat, initialCenter.lng]}
+        zoom={DEFAULT_WORLD_VIEW.zoom}
+        scrollWheelZoom
         minZoom={2}
         maxZoom={18}
         maxBounds={[
@@ -284,76 +98,157 @@ function Map() {
           errorTileUrl="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgZmlsbD0iIzJkMzQzOSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjYWFhIiBmb250LXNpemU9IjE0Ij5NYXAgVGlsZSBVbmF2YWlsYWJsZTwvdGV4dD48L3N2Zz4="
         />
 
-        {/* City Markers */}
         {cities.map((city) => (
           <Marker
-            position={[city.position.lat, city.position.lng]}
+            icon={cityIcon}
             key={city.id}
+            position={[city.position.lat, city.position.lng]}
           >
-            <Popup
-              className="custom-popup"
-              maxWidth={200}
-              closeButton={true}
-              autoPan={true}
-            >
-              <div className="flex items-center gap-2 p-1">
-                <span className="text-lg" role="img" aria-label="flag">
-                  {city.emoji}
-                </span>
-                <span className="font-semibold text-dark-0 text-sm">
+            <Popup className="text-dark-0" maxWidth={240}>
+              <div className="flex min-w-40 items-center gap-2 p-2">
+                <img
+                  alt={`Flag of ${city.country}`}
+                  className="h-5 w-7 rounded object-cover"
+                  src={`https://flagcdn.com/32x24/${city.emoji.toLowerCase()}.png`}
+                />
+                <Link
+                  className="inline-flex min-h-11 items-center rounded px-2 py-2 font-semibold text-dark-0 hover:bg-light-1 focus:outline-none focus:ring-2 focus:ring-brand-2"
+                  to={cityDetailTarget(city.id, city.position)}
+                >
                   {city.cityName}
-                </span>
+                </Link>
               </div>
             </Popup>
           </Marker>
         ))}
 
-        <ChangeCenter position={mapPosition} />
-        <DetectClick />
+        {pendingPin.kind === "pending" && (
+          <PendingPin
+            onConfirm={handleConfirmPendingPin}
+            onDismiss={handleDismissPendingPin}
+            position={pendingPin.position}
+          />
+        )}
+
+        <ApplyInitialView
+          isLoading={isLoading}
+          positions={cities.map((city) => city.position)}
+          shouldSkip={urlPosition !== null}
+        />
+        {requestedPosition && <ChangeCenter position={requestedPosition} />}
+        <DetectClick onTap={handleMapTap} />
       </MapContainer>
 
-      {/* Loading overlay for better UX */}
-      {isLoadingGeoLocation && (
-        <div className="absolute inset-0 bg-dark-1/50 backdrop-blur-sm flex items-center justify-center z-[999] rounded-lg md:rounded-none sm:rounded-lg">
-          <div className="bg-dark-0 p-4 rounded-lg shadow-xl flex items-center gap-3">
-            <Spinner small />
-            <span className="text-light-2 font-medium">
-              Getting your location...
-            </span>
-          </div>
-        </div>
-      )}
+      <button
+        aria-label="Use your Position"
+        className="absolute bottom-20 right-4 z-[1000] flex min-h-11 items-center gap-2 rounded-lg bg-brand-2 px-4 py-2 text-sm font-bold text-dark-1 shadow-lg focus:outline-none focus:ring-2 focus:ring-light-2"
+        disabled={isLoadingGeoLocation}
+        onClick={getPositionGeoLocation}
+        type="button"
+      >
+        {isLoadingGeoLocation ? <Spinner small /> : null}
+        <span>{isLoadingGeoLocation ? "Locating..." : "Use your Position"}</span>
+      </button>
     </div>
   );
 }
 
-function ChangeCenter({ position }: { position: LatLngTuple }) {
+function ApplyInitialView({
+  isLoading,
+  positions,
+  shouldSkip,
+}: {
+  isLoading: boolean;
+  positions: Position[];
+  shouldSkip: boolean;
+}) {
   const map = useMap();
+  const hasWaitedForCities = useRef(false);
+  const hasAppliedInitialView = useRef(false);
 
   useEffect(() => {
-    if (position.length === 2) {
-      map.setView(position, map.getZoom(), {
-        animate: true,
-        duration: 1,
-      });
+    if (!hasWaitedForCities.current) {
+      hasWaitedForCities.current = true;
+      return;
     }
-  }, [position, map]);
+
+    if (hasAppliedInitialView.current) return;
+
+    if (shouldSkip) {
+      hasAppliedInitialView.current = true;
+      return;
+    }
+
+    if (isLoading) return;
+
+    const view = mapViewForPositions(positions);
+    if (view.kind === "center") {
+      map.setView([view.position.lat, view.position.lng], view.zoom);
+    } else {
+      const bounds: LatLngBoundsExpression = [
+        [view.southWest.lat, view.southWest.lng],
+        [view.northEast.lat, view.northEast.lng],
+      ];
+      map.fitBounds(bounds, { padding: view.padding });
+    }
+    hasAppliedInitialView.current = true;
+  }, [isLoading, map, positions, shouldSkip]);
 
   return null;
 }
 
-function DetectClick() {
-  const navigate = useNavigate();
-  const { clearError } = useCities();
+function ChangeCenter({ position }: { position: Position }) {
+  const map = useMap();
 
+  useEffect(() => {
+    map.setView([position.lat, position.lng], map.getZoom(), {
+      animate: true,
+      duration: 1,
+    });
+  }, [map, position.lat, position.lng]);
+
+  return null;
+}
+
+function DetectClick({ onTap }: { onTap: (position: Position) => void }) {
   useMapEvents({
-    click: (e) => {
-      clearError();
-      navigate(`form?lat=${e.latlng.lat}&lng=${e.latlng.lng}`);
-    },
+    click: (event) => onTap({ lat: event.latlng.lat, lng: event.latlng.lng }),
   });
 
   return null;
+}
+
+function PendingPin({
+  onConfirm,
+  onDismiss,
+  position,
+}: {
+  onConfirm: () => void;
+  onDismiss: () => void;
+  position: Position;
+}) {
+  const marker = useRef<LeafletMarker | null>(null);
+
+  useEffect(() => {
+    marker.current?.openPopup();
+  }, [position.lat, position.lng]);
+
+  return (
+    <Marker icon={cityIcon} position={[position.lat, position.lng]} ref={marker}>
+      <Popup closeOnEscapeKey eventHandlers={{ remove: onDismiss }}>
+        <div className="flex min-w-48 flex-col gap-3 p-2 text-dark-0">
+          <span className="text-base font-semibold">Add city here?</span>
+          <button
+            className="min-h-11 rounded bg-brand-2 px-3 py-2 font-bold text-dark-1 focus:outline-none focus:ring-2 focus:ring-dark-0"
+            onClick={onConfirm}
+            type="button"
+          >
+            Add City
+          </button>
+        </div>
+      </Popup>
+    </Marker>
+  );
 }
 
 export default Map;
