@@ -24,6 +24,8 @@ dist-ssr
 *.sw?
 
 data
+!src/map/data/
+!src/map/data/**
 # Local environment (Firebase config)
 .env
 .env.local

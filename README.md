@@ -196,6 +196,15 @@ files and nothing else:
 Position, shared by the Add City form and the map's "Add ‹place›?" popup so the
 two cannot disagree about what you tapped.
 
+### Country boundaries
+
+The map includes Natural Earth's public-domain 1:50m Admin 0 country
+boundaries, reduced to geometry and Natural Earth's `ISO_A2_EH` identifiers.
+Country fills derive from the existing `emoji` country-code field on each saved City;
+no City records are migrated or rewritten. Natural Earth requests the courtesy
+credit Made with Natural Earth. The source URL and license details are in
+[`src/map/data/NATURAL_EARTH.md`](src/map/data/NATURAL_EARTH.md).
+
 ### Why photos live in the database
 
 Cloud Storage for Firebase has required the paid Blaze plan for every bucket
