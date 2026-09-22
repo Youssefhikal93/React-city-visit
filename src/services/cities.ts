@@ -12,6 +12,7 @@ import {
 
 import { db } from "./firebase";
 import { findSavedCity } from "./cityIdentity";
+import { serializeVisitDate } from "./visitDate";
 import type { City, CityUpdate, NewCity, StoredCity } from "../types";
 
 const LEGACY_MEMORY_ID = "legacy-image";
@@ -75,6 +76,7 @@ export function normalizeCity(id: string, city: StoredCity): City {
     country: city.country ?? "",
     emoji: city.emoji ?? "",
     date: city.date ?? null,
+    datePrecision: city.datePrecision === "month" ? "month" : "day",
     notes: city.notes ?? "",
     visitCount:
       Number.isSafeInteger(city.visitCount) && city.visitCount! > 0
@@ -87,14 +89,6 @@ export function normalizeCity(id: string, city: StoredCity): City {
       lng: Number(city.position?.lng ?? 0),
     },
   };
-}
-
-/** Dates arrive from the date picker as a Date; store them as ISO strings. */
-function serializeDate(date: Date | string | null | undefined): string {
-  if (!date) return new Date().toISOString();
-  return date instanceof Date
-    ? date.toISOString()
-    : new Date(date).toISOString();
 }
 
 /**
@@ -125,7 +119,8 @@ export async function createCity(
     cityName: city.cityName,
     country: city.country ?? "",
     emoji: city.emoji ?? "",
-    date: serializeDate(city.date),
+    date: serializeVisitDate(city.date, city.datePrecision),
+    datePrecision: city.datePrecision,
     notes: city.notes ?? "",
     visitCount: 1,
     position: {

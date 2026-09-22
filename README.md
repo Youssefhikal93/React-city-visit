@@ -135,7 +135,7 @@ users/
       plannedCountry: "is"   <- optional ISO 3166-1 alpha-2 country code
     cities/
       -PabcXYZ.../           <- database push key, used as the city id
-        cityName, country, emoji, date, notes
+        cityName, country, emoji, date, datePrecision, notes
         position: { lat, lng }
         memories/            <- up to five base64 JPEGs, long side 800px
           -PdefUVW...        <- push key, used as the memory id

@@ -5,19 +5,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useCities } from "../context/CitiesContext";
 import { mapCityTarget } from "../map/mapBehaviour";
 import type { Memory } from "../types";
+import { formatVisitDate } from "../services/visitDate";
 import { fitWithinLongSide } from "./memoryDimensions";
 import Spinner from "./Spinner";
 
 const MAX_MEMORIES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
-const formatDate = (date: string | null) =>
-  new window.Intl.DateTimeFormat("en", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    weekday: "long",
-  }).format(new Date(date ?? Date.now()));
 
 function resizeImage(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -147,7 +140,7 @@ function City() {
 
   if (isLoading || !currentCity) return <Spinner />;
 
-  const { cityName, emoji, date, notes } = currentCity;
+  const { cityName, emoji, date, datePrecision, notes } = currentCity;
   const cityMemories = memories ?? [];
   const cannotAddMemory = cityMemories.length >= MAX_MEMORIES;
 
@@ -180,14 +173,21 @@ function City() {
                 </h1>
               </div>
             </div>
-            <div className="flex flex-col gap-2 sm:gap-3">
-              <h2 className="text-xs font-extrabold uppercase tracking-wider text-light-1 sm:text-sm">
-                You went to {cityName} on
-              </h2>
-              <p className="text-base font-medium text-light-2 sm:text-lg md:text-xl">
-                {formatDate(date)}
-              </p>
-            </div>
+            {date && (
+              <div className="flex flex-col gap-2 sm:gap-3">
+                <h2 className="text-xs font-extrabold uppercase tracking-wider text-light-1 sm:text-sm">
+                  You went to {cityName} on
+                </h2>
+                <p className="text-base font-medium text-light-2 sm:text-lg md:text-xl">
+                  {formatVisitDate(date, datePrecision, {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                    weekday: "long",
+                  })}
+                </p>
+              </div>
+            )}
           </div>
         </header>
 

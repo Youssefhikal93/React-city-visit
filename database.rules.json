@@ -53,6 +53,7 @@
             "country": { ".validate": "newData.isString() && newData.val().length <= 120" },
             "emoji": { ".validate": "newData.isString() && newData.val().length <= 16" },
             "date": { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "datePrecision": { ".validate": "newData.val() === 'day' || newData.val() === 'month'" },
             "visitCount": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() % 1 === 0" },
             "notes": { ".validate": "newData.isString() && newData.val().length <= 2000" },
             "image": { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 2000000)" },

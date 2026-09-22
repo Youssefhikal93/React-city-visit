@@ -8,6 +8,7 @@ const database = vi.hoisted(() => ({
   push: vi.fn(),
   ref: vi.fn(),
   remove: vi.fn(),
+  runTransaction: vi.fn(),
   serverTimestamp: vi.fn(),
   update: vi.fn(),
 }));
@@ -15,7 +16,7 @@ const database = vi.hoisted(() => ({
 vi.mock("firebase/database", () => database);
 vi.mock("./firebase", () => ({ db: {} }));
 
-import { addMemory, deleteMemory, normalizeCity } from "./cities";
+import { addMemory, createCity, deleteMemory, normalizeCity } from "./cities";
 
 function storedCitySnapshot(city: StoredCity) {
   return {
@@ -80,6 +81,12 @@ describe("City Memory writes", () => {
 });
 
 describe("normalizeCity", () => {
+  it("treats a legacy City date as a full date", () => {
+    expect(
+      normalizeCity("stockholm", { date: "2024-03-31T00:00:00.000Z" }),
+    ).toMatchObject({ datePrecision: "day" });
+  });
+
   it("turns a legacy image into one Memory", () => {
     const city = normalizeCity("stockholm", {
       cityName: "Stockholm",
@@ -108,4 +115,51 @@ describe("normalizeCity", () => {
   it("uses an empty Memory list when neither shape is stored", () => {
     expect(normalizeCity("stockholm", {}).memories).toEqual([]);
   });
+});
+
+describe("City date writes", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    database.ref.mockImplementation((_database, path: string) => ({ path }));
+    database.push.mockReturnValue({ key: "city-new" });
+    database.serverTimestamp.mockReturnValue(123);
+    database.runTransaction.mockImplementation(
+      async (
+        _reference: unknown,
+        writeCity: (
+          storedCities: Record<string, StoredCity> | null,
+        ) => Record<string, StoredCity> | undefined,
+      ) => {
+        const storedCities = writeCity(null);
+        if (!storedCities) throw new Error("City was not saved.");
+        database.get.mockResolvedValue(storedCitySnapshot(storedCities["city-new"]));
+        return { committed: true };
+      },
+    );
+  });
+
+  it.each([
+    [
+      "full-date",
+      "day",
+      new Date(2024, 2, 31),
+      new Date(2024, 2, 31).toISOString(),
+    ],
+    ["month-only", "month", new Date(2024, 2, 31), "2024-03-01T00:00:00.000Z"],
+  ] as const)(
+    "persists %s visits with their selected precision",
+    async (_description, datePrecision, date, expectedDate) => {
+      await expect(
+        createCity("tester", {
+          cityName: "Stockholm",
+          country: "Sweden",
+          emoji: "se",
+          date,
+          datePrecision,
+          notes: "",
+          position: { lat: 59.3293, lng: 18.0686 },
+        }),
+      ).resolves.toMatchObject({ date: expectedDate, datePrecision });
+    },
+  );
 });

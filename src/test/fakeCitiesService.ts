@@ -1,5 +1,6 @@
 import type * as citiesApi from "../services/cities";
-import type { City, Memory, NewCity } from "../types";
+import { serializeVisitDate } from "../services/visitDate";
+import type { City, Memory } from "../types";
 
 type CitiesListener = (cities: City[]) => void;
 
@@ -31,6 +32,7 @@ const defaultCity: FakeCity = {
   country: "Sweden",
   emoji: "se",
   date: "2024-01-01T00:00:00.000Z",
+  datePrecision: "day",
   notes: "",
   memories: [],
   createdAt: 1,
@@ -93,11 +95,6 @@ function readCity(city: FakeStoredCity): City {
   };
 }
 
-function serializeDate(date: NewCity["date"]): string {
-  if (!date) return new Date().toISOString();
-  return date instanceof Date ? date.toISOString() : new Date(date).toISOString();
-}
-
 export function createFakeCitiesService(seedCities: FakeCity[] = []): FakeCitiesService {
   let cities = sortCities(seedCities.map(storeCity));
   let nextId = 1;
@@ -140,7 +137,8 @@ export function createFakeCitiesService(seedCities: FakeCity[] = []): FakeCities
         cityName: newCity.cityName,
         country: newCity.country,
         emoji: newCity.emoji,
-        date: serializeDate(newCity.date),
+        date: serializeVisitDate(newCity.date, newCity.datePrecision),
+        datePrecision: newCity.datePrecision,
         notes: newCity.notes,
         memories: [],
         createdAt: Math.max(0, ...cities.map((city) => city.createdAt)) + 1,

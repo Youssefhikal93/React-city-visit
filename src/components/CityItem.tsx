@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { FiTrash2 } from "react-icons/fi";
 import { useCities } from "../context/CitiesContext";
 import { cityDetailTarget } from "../map/mapBehaviour";
+import { formatVisitDate } from "../services/visitDate";
 import type { City } from "../types";
 import VisitCounter from "./VisitCounter";
 
@@ -26,8 +27,12 @@ function CityItem({ city }: { city: City }) {
           <h3>{city.cityName}</h3>
           <p>{city.country}</p>
           {city.date && (
-            <time dateTime={city.date}>
-              {new Date(city.date).toLocaleDateString("en", {
+            <time
+              dateTime={
+                city.datePrecision === "month" ? city.date.slice(0, 7) : city.date
+              }
+            >
+              {formatVisitDate(city.date, city.datePrecision, {
                 day: "numeric",
                 month: "short",
                 year: "numeric",
