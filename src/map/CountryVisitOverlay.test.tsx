@@ -9,7 +9,13 @@ import {
 import { aCity } from "../test/fakeCitiesService";
 import type { City } from "../types";
 
-function CountryMap({ cities }: { cities: City[] }) {
+function CountryMap({
+  cities,
+  homeCountryCode = null,
+}: {
+  cities: City[];
+  homeCountryCode?: string | null;
+}) {
   return (
     <MapContainer
       attributionControl={false}
@@ -18,7 +24,7 @@ function CountryMap({ cities }: { cities: City[] }) {
       zoom={4}
       zoomControl={false}
     >
-      <CountryVisitOverlay cities={cities} />
+      <CountryVisitOverlay cities={cities} homeCountryCode={homeCountryCode} />
     </MapContainer>
   );
 }
@@ -40,11 +46,34 @@ describe("CountryVisitOverlay", () => {
     expect(countryPaths()).toHaveLength(0);
   });
 
+  test("restores visited coloring after clearing a home Country that is also visited", () => {
+    const paris = aCity({ id: "paris", emoji: "fr" });
+    const { container, rerender } = render(
+      <CountryMap cities={[paris]} homeCountryCode="fr" />,
+    );
+    const countryPaths = () =>
+      container.querySelectorAll(".leaflet-overlay-pane path");
+
+    expect(countryPaths()).not.toHaveLength(0);
+    countryPaths().forEach((path) =>
+      expect(path).toHaveAttribute("fill", "#fbbf24"),
+    );
+
+    rerender(<CountryMap cities={[paris]} />);
+
+    countryPaths().forEach((path) =>
+      expect(path).toHaveAttribute("fill", "#22c29b"),
+    );
+  });
+
   test("shows a visible legend for the Country fill", () => {
     render(<CountryVisitLegend />);
 
     expect(screen.getByLabelText("Map legend")).toHaveTextContent(
       "Visited Country",
+    );
+    expect(screen.getByLabelText("Map legend")).toHaveTextContent(
+      "Home Country",
     );
   });
 });

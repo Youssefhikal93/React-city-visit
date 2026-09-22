@@ -130,6 +130,8 @@ users/
     profile/                 <- readable, so signup can check availability
       displayName: "Youssef" <- the casing as typed
       createdAt, lastLoginAt
+    settings/                <- private; requires the Account's proved session
+      homeCountry: "se"      <- optional ISO 3166-1 alpha-2 country code
     cities/
       -PabcXYZ.../           <- database push key, used as the city id
         cityName, country, emoji, date, notes
@@ -200,8 +202,10 @@ two cannot disagree about what you tapped.
 
 The map includes Natural Earth's public-domain 1:50m Admin 0 country
 boundaries, reduced to geometry and Natural Earth's `ISO_A2_EH` identifiers.
-Country fills derive from the existing `emoji` country-code field on each saved City;
-no City records are migrated or rewritten. Natural Earth requests the courtesy
+Visited Country fills derive from the existing `emoji` country-code field on each saved City.
+An Account's optional home Country is a private `settings/homeCountry` value and uses
+its own map color, taking precedence when it is also visited; neither selection changes
+City records. Natural Earth requests the courtesy
 credit Made with Natural Earth. The source URL and license details are in
 [`src/map/data/NATURAL_EARTH.md`](src/map/data/NATURAL_EARTH.md).
 

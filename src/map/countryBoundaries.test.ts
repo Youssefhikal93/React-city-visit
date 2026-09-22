@@ -1,27 +1,39 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  countryCodes,
   countryCodeForCity,
   visitedCountryBoundaries,
 } from "./countryBoundaries";
 import countryBoundaryData from "./data/countries.json";
 import { aCity } from "../test/fakeCitiesService";
 
-function countryCodes(cities: Parameters<typeof visitedCountryBoundaries>[0]) {
+function visitedCountryCodes(
+  cities: Parameters<typeof visitedCountryBoundaries>[0],
+) {
   return visitedCountryBoundaries(cities).features.map(
     (country) => country.properties.countryCode,
   );
 }
 
 describe("visited Country boundaries", () => {
+  test("uses only supported two-letter Country codes for selectors", () => {
+    expect(countryCodes).not.toContain("-99");
+    expect(countryCodes.every((countryCode) => /^[a-z]{2}$/.test(countryCode))).toBe(
+      true,
+    );
+  });
+
   test("matches saved Cities by their country code, not their display name", () => {
     const cities = [
       aCity({ country: "French Republic", emoji: "FR" }),
       aCity({ country: "Norway", emoji: "no" }),
     ];
 
-    expect(countryCodes(cities)).toEqual(expect.arrayContaining(["fr", "no"]));
-    expect(countryCodes(cities)).toHaveLength(2);
+    expect(visitedCountryCodes(cities)).toEqual(
+      expect.arrayContaining(["fr", "no"]),
+    );
+    expect(visitedCountryCodes(cities)).toHaveLength(2);
   });
 
   test("drops a Country when its last saved City is deleted", () => {
@@ -29,19 +41,19 @@ describe("visited Country boundaries", () => {
     const lyon = aCity({ id: "lyon", country: "France", emoji: "fr" });
     const oslo = aCity({ id: "oslo", country: "Norway", emoji: "no" });
 
-    expect(countryCodes([paris, lyon, oslo])).toEqual(
+    expect(visitedCountryCodes([paris, lyon, oslo])).toEqual(
       expect.arrayContaining(["fr", "no"]),
     );
-    expect(countryCodes([lyon, oslo])).toEqual(
+    expect(visitedCountryCodes([lyon, oslo])).toEqual(
       expect.arrayContaining(["fr", "no"]),
     );
-    expect(countryCodes([oslo])).toEqual(["no"]);
+    expect(visitedCountryCodes([oslo])).toEqual(["no"]);
   });
 
   test("leaves legacy rows with no usable country identifier untouched", () => {
     expect(countryCodeForCity(aCity({ emoji: "" }))).toBeNull();
     expect(countryCodeForCity(aCity({ emoji: "France" }))).toBeNull();
-    expect(countryCodes([aCity({ emoji: "" })])).toEqual([]);
+    expect(visitedCountryCodes([aCity({ emoji: "" })])).toEqual([]);
   });
 
   test("contains a complete country geometry dataset rather than placeholder shapes", () => {

@@ -25,6 +25,17 @@
           "$other": { ".validate": false }
         },
 
+        "settings": {
+          // Private Account preferences use the same proved-session check as Cities.
+          ".read": "auth != null && root.child('sessions/' + auth.uid + '/username').val() === $username",
+          ".write": "auth != null && root.child('sessions/' + auth.uid + '/username').val() === $username",
+
+          "homeCountry": {
+            ".validate": "!newData.exists() || (newData.isString() && newData.val().matches(/^[a-z]{2}$/))"
+          },
+          "$other": { ".validate": false }
+        },
+
         // Only reachable by a session that has proved this account's PIN.
         "cities": {
           ".read": "auth != null && root.child('sessions/' + auth.uid + '/username').val() === $username",

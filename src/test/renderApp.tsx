@@ -9,6 +9,7 @@ import CityList from "../components/CityList";
 import CountriesList from "../components/CountriesList";
 import Form from "../components/Form";
 import { CitiesProvider } from "../context/CitiesContext";
+import { HomeCountryProvider } from "../context/HomeCountryContext";
 import ProtectedRoute from "../pages/ProtectedRoute";
 import AppIndexRedirect from "../pages/AppIndexRedirect";
 import AppLayout from "../pages/AppLayout";
@@ -57,6 +58,24 @@ type CitiesApiMock = {
   >;
 };
 
+type HomeCountryApiMock = {
+  subscribeToHomeCountry: ReturnType<
+    typeof vi.fn<
+      (
+        username: string,
+        onHomeCountry: (countryCode: string | null) => void,
+        onError: (error: Error) => void,
+      ) => Unsubscribe
+    >
+  >;
+  saveHomeCountry: ReturnType<
+    typeof vi.fn<(username: string, countryCode: string) => Promise<void>>
+  >;
+  clearHomeCountry: ReturnType<
+    typeof vi.fn<(username: string) => Promise<void>>
+  >;
+};
+
 const citiesApi = vi.hoisted<CitiesApiMock>(() => ({
   subscribeToCities: vi.fn(),
   fetchCity: vi.fn(),
@@ -67,7 +86,14 @@ const citiesApi = vi.hoisted<CitiesApiMock>(() => ({
   deleteMemory: vi.fn(),
 }));
 
+const homeCountryApi = vi.hoisted<HomeCountryApiMock>(() => ({
+  subscribeToHomeCountry: vi.fn(),
+  saveHomeCountry: vi.fn(),
+  clearHomeCountry: vi.fn(),
+}));
+
 vi.mock("../services/cities", () => citiesApi);
+vi.mock("../services/homeCountry", () => homeCountryApi);
 vi.mock("../services/firebase", () => ({
   auth: { currentUser: null },
   db: {},
@@ -153,6 +179,17 @@ function configureFakeCitiesService(fakeCitiesService: FakeCitiesService) {
   citiesApi.deleteMemory.mockImplementation(fakeCitiesService.deleteMemory);
 }
 
+function configureFakeHomeCountryService() {
+  homeCountryApi.subscribeToHomeCountry.mockImplementation(
+    (_username, onHomeCountry) => {
+      onHomeCountry(null);
+      return () => undefined;
+    },
+  );
+  homeCountryApi.saveHomeCountry.mockResolvedValue(undefined);
+  homeCountryApi.clearHomeCountry.mockResolvedValue(undefined);
+}
+
 export function renderApp({
   cities = [],
   route = "/app/cities",
@@ -160,12 +197,14 @@ export function renderApp({
 }: RenderAppOptions = {}) {
   installMatchMedia(viewport);
   configureFakeCitiesService(createFakeCitiesService(cities));
+  configureFakeHomeCountryService();
 
   return {
     user: userEvent.setup(),
     ...render(
       <MemoryRouter initialEntries={[route]}>
-        <CitiesProvider>
+        <HomeCountryProvider>
+          <CitiesProvider>
           <Routes>
             <Route
               path="app"
@@ -184,7 +223,8 @@ export function renderApp({
             </Route>
           </Routes>
           <CurrentLocation />
-        </CitiesProvider>
+          </CitiesProvider>
+        </HomeCountryProvider>
       </MemoryRouter>
     ),
   };

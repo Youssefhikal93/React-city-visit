@@ -15,6 +15,16 @@ export type CountryBoundaryCollection = FeatureCollection<
 
 const allCountryBoundaries = countryBoundaryData as CountryBoundaryCollection;
 
+export const countryCodes = [
+  ...new Set(
+    allCountryBoundaries.features.map(
+      (country) => country.properties.countryCode,
+    ),
+  ),
+]
+  .filter((countryCode) => /^[a-z]{2}$/.test(countryCode))
+  .sort();
+
 /**
  * City.emoji has always stored the lowercased two-letter country code used by
  * the flag service. Reading that existing identifier makes this feature
@@ -25,7 +35,10 @@ export function countryCodeForCity(city: Pick<City, "emoji">): string | null {
   return /^[a-z]{2}$/.test(countryCode) ? countryCode : null;
 }
 
-export function visitedCountryBoundaries(cities: City[]): CountryBoundaryCollection {
+export function visitedCountryBoundaries(
+  cities: City[],
+  excludedCountryCode: string | null = null,
+): CountryBoundaryCollection {
   const visitedCountryCodes = new Set(
     cities.flatMap((city) => {
       const countryCode = countryCodeForCity(city);
@@ -36,7 +49,21 @@ export function visitedCountryBoundaries(cities: City[]): CountryBoundaryCollect
   return {
     type: "FeatureCollection",
     features: allCountryBoundaries.features.filter((country) =>
+      country.properties.countryCode !== excludedCountryCode &&
       visitedCountryCodes.has(country.properties.countryCode),
     ),
+  };
+}
+
+export function homeCountryBoundaries(
+  countryCode: string | null,
+): CountryBoundaryCollection {
+  return {
+    type: "FeatureCollection",
+    features: countryCode
+      ? allCountryBoundaries.features.filter(
+          (country) => country.properties.countryCode === countryCode,
+        )
+      : [],
   };
 }

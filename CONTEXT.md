@@ -13,7 +13,7 @@ One visited place an Account has pinned: a name, a Country, a visit date, option
 _Avoid_: Pin, marker, place, location, visit
 
 **Country**:
-A grouping of an Account's Cities by the nation they sit in, shown with its flag. Derived from Cities; never created directly.
+A grouping of an Account's Cities by the nation they sit in, shown with its flag. A visited Country is derived from Cities; never created directly. An Account may separately select one private home Country, which does not create a City or count as visited.
 
 **Memory**:
 One photo attached to a City. A City has zero to five Memories; a Memory has no text of its own.
