@@ -7,7 +7,7 @@ function section(name: string): HTMLElement {
   return screen.getByRole("region", { name: new RegExp(`^${name}`) });
 }
 
-it("shows Lived in, Visited, and Planned sections in that order", async () => {
+it("shows Lived in, Planned, and Visited sections in that order", async () => {
   renderApp({
     route: "/app/countries",
     cities: [aCity({ id: "paris", country: "France", emoji: "fr" })],
@@ -17,7 +17,7 @@ it("shows Lived in, Visited, and Planned sections in that order", async () => {
   const headings = (await screen.findAllByRole("heading", { level: 3 })).map(
     (heading) => heading.textContent?.replace(/\d+$/, "").trim(),
   );
-  expect(headings).toEqual(["Lived in", "Visited", "Planned"]);
+  expect(headings).toEqual(["Lived in", "Planned", "Visited"]);
   expect(within(section("Lived in")).getByText("Sweden")).toBeVisible();
   expect(within(section("Visited")).getByText("France")).toBeVisible();
   expect(within(section("Planned")).getByText("Iceland")).toBeVisible();
@@ -77,4 +77,28 @@ it("allows the same Country on both lists", async () => {
 
   expect(within(section("Lived in")).getByText("Egypt")).toBeVisible();
   expect(within(section("Planned")).getByText("Egypt")).toBeVisible();
+});
+
+it("collapses and expands each section from its heading", async () => {
+  const { user } = renderApp({
+    route: "/app/countries",
+    cities: [aCity({ id: "paris", country: "France", emoji: "fr" })],
+    countryLists: { livedInCountryCodes: ["se"], plannedCountryCodes: ["is"] },
+  });
+
+  for (const [title, entry] of [
+    ["Lived in", "Sweden"],
+    ["Planned", "Iceland"],
+    ["Visited", "France"],
+  ]) {
+    const toggle = await screen.findByRole("button", { name: new RegExp(`^${title}`) });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(within(section(title)).queryByText(entry)).not.toBeInTheDocument();
+
+    await user.click(toggle);
+    expect(within(section(title)).getByText(entry)).toBeVisible();
+  }
 });

@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { FiChevronDown, FiMap } from "react-icons/fi";
+import { useCountryLists } from "../context/CountryListsContext";
 import { cityDetailTarget, mapCountryTarget } from "../map/mapBehaviour";
 import type { City, Country } from "../types";
 import VisitCounter from "./VisitCounter";
@@ -14,8 +15,10 @@ function CountryItem({
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const panelId = useId();
+  const { livedInCountryCodes } = useCountryLists();
+  const isLivedIn = livedInCountryCodes.includes(country.emoji.toLowerCase());
   return (
-    <li className="country-card">
+    <li className={"country-card" + (isExpanded ? " country-card-expanded" : "")}>
       <button
         type="button"
         className="country-toggle"
@@ -33,6 +36,7 @@ function CountryItem({
           <small>
             {cities.length} {cities.length === 1 ? "city" : "cities"} visited
           </small>
+          {isLivedIn && <span className="lived-in-badge">Lived in</span>}
         </span>
         <FiChevronDown
           aria-hidden="true"

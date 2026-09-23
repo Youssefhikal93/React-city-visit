@@ -4,6 +4,7 @@ import { FiX } from "react-icons/fi";
 import { useCountryLists } from "../context/CountryListsContext";
 import { countryName, countryOptions } from "../map/countries";
 import type { CountryList } from "../services/countryLists";
+import CountrySection from "./CountrySection";
 
 interface CountryListSectionProps {
   list: CountryList;
@@ -36,7 +37,6 @@ export default function CountryListSection({
   const [saveError, setSaveError] = useState("");
   const countryCodes = list === "livedIn" ? livedInCountryCodes : plannedCountryCodes;
   const listed = new Set(countryCodes);
-  const headingId = `${list}-countries-heading`;
   const pickerId = `${list}-countries-picker`;
   const listedCountries = countryCodes
     .map((countryCode) => ({ countryCode, name: countryName(countryCode) }))
@@ -55,13 +55,13 @@ export default function CountryListSection({
   }
 
   return (
-    <section aria-labelledby={headingId} className="country-section">
-      <header className="country-section-heading">
-        <h3 id={headingId}>
-          {icon} {title} <span>{countryCodes.length}</span>
-        </h3>
-        <p>{description}</p>
-      </header>
+    <CountrySection
+      count={countryCodes.length}
+      description={description}
+      icon={icon}
+      id={`${list}-countries`}
+      title={title}
+    >
       <label className="sr-only" htmlFor={pickerId}>
         Add a Country to {title}
       </label>
@@ -127,6 +127,6 @@ export default function CountryListSection({
           ))}
         </ul>
       )}
-    </section>
+    </CountrySection>
   );
 }

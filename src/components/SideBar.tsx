@@ -15,7 +15,8 @@ function SideBar({ children, navigation, footer }: SideBarProps) {
         <Logo />
         {navigation}
       </div>
-      <div className="flex-1 min-h-0 w-full">{children}</div>
+      {/* Lists scroll inside themselves; a City detail or the form scrolls here. */}
+      <div className="flex-1 min-h-0 w-full overflow-y-auto">{children}</div>
       {footer && <div className="shrink-0 pt-3">{footer}</div>}
     </aside>
   );

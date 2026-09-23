@@ -2,6 +2,7 @@ import { FiCompass, FiGlobe, FiHome, FiMapPin } from "react-icons/fi";
 import Spinner from "./Spinner";
 import CountryItem from "./CountryItem";
 import CountryListSection from "./CountryListSection";
+import CountrySection from "./CountrySection";
 import Message from "./Message";
 import { useCities } from "../context/CitiesContext";
 import { useCountryLists } from "../context/CountryListsContext";
@@ -12,13 +13,13 @@ function VisitedCountries() {
   const countries = [...new Set(cities.map((city) => city.country))].sort();
 
   return (
-    <section aria-labelledby="visited-countries-heading" className="country-section">
-      <header className="country-section-heading">
-        <h3 id="visited-countries-heading">
-          <FiMapPin aria-hidden="true" /> Visited <span>{countries.length}</span>
-        </h3>
-        <p>Countries with Cities you saved.</p>
-      </header>
+    <CountrySection
+      count={countries.length}
+      description="Countries with Cities you saved."
+      icon={<FiMapPin aria-hidden="true" />}
+      id="visited-countries"
+      title="Visited"
+    >
       {isLoading ? (
         <Spinner />
       ) : error ? (
@@ -43,7 +44,7 @@ function VisitedCountries() {
           })}
         </ul>
       )}
-    </section>
+    </CountrySection>
   );
 }
 
@@ -59,7 +60,7 @@ function CountriesList() {
         <h2>
           <FiGlobe aria-hidden="true" /> Countries <span>{beenTo.size}</span>
         </h2>
-        <p>Where you lived, where you've been, and where you're going next.</p>
+        <p>Where you lived, where you're going next, and where you've been.</p>
       </header>
       <CountryListSection
         description="Countries you called home. They count even without a City."
@@ -68,7 +69,6 @@ function CountriesList() {
         list="livedIn"
         title="Lived in"
       />
-      <VisitedCountries />
       <CountryListSection
         description="Countries you want to visit. One leaves this list when you add a City there."
         emptyMessage="No planned Countries yet."
@@ -76,6 +76,7 @@ function CountriesList() {
         list="planned"
         title="Planned"
       />
+      <VisitedCountries />
     </section>
   );
 }
