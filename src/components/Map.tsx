@@ -19,7 +19,7 @@ import { FiNavigation } from "react-icons/fi";
 import { findSavedCity } from "../services/cityIdentity";
 
 import { useCities } from "../context/CitiesContext";
-import { useHomeCountry } from "../context/HomeCountryContext";
+import { useCountryLists } from "../context/CountryListsContext";
 import { reverseGeocode, type PlaceName } from "../services/geocoding";
 import { useGeolocation } from "../hooks/useGeoLocation";
 import { useURLPosition } from "../hooks/useURLPosition";
@@ -57,7 +57,7 @@ function Map() {
   const navigate = useNavigate();
   const { search } = useLocation();
   const { cities, clearError, isLoading } = useCities();
-  const { countryCode: homeCountryCode, plannedCountryCode } = useHomeCountry();
+  const { livedInCountryCodes, plannedCountryCodes } = useCountryLists();
   const {
     getPosition: getPositionGeoLocation,
     isLoading: isLoadingGeoLocation,
@@ -152,8 +152,8 @@ function Map() {
 
         <CountryVisitOverlay
           cities={cities}
-          homeCountryCode={homeCountryCode}
-          plannedCountryCode={plannedCountryCode}
+          livedInCountryCodes={livedInCountryCodes}
+          plannedCountryCodes={plannedCountryCodes}
         />
 
         {cities.map((city) => (

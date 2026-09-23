@@ -7,9 +7,14 @@ import { vi } from "vitest";
 import CityPage from "../components/City";
 import CityList from "../components/CityList";
 import CountriesList from "../components/CountriesList";
+import Dashboard from "../components/Dashboard";
 import Form from "../components/Form";
 import { CitiesProvider } from "../context/CitiesContext";
-import { HomeCountryProvider } from "../context/HomeCountryContext";
+import { CountryListsProvider } from "../context/CountryListsContext";
+import type {
+  AccountCountryLists,
+  CountryList,
+} from "../services/countryLists";
 import ProtectedRoute from "../pages/ProtectedRoute";
 import AppIndexRedirect from "../pages/AppIndexRedirect";
 import AppLayout from "../pages/AppLayout";
@@ -58,34 +63,24 @@ type CitiesApiMock = {
   >;
 };
 
-type HomeCountryApiMock = {
-  subscribeToCountryPreferences: ReturnType<
+type CountryListsApiMock = {
+  subscribeToCountryLists: ReturnType<
     typeof vi.fn<
       (
         username: string,
-        onPreferences: (preferences: {
-          homeCountryCode: string | null;
-          plannedCountryCode: string | null;
-        }) => void,
+        onLists: (lists: AccountCountryLists) => void,
         onError: (error: Error) => void,
       ) => Unsubscribe
     >
   >;
-  saveCountryPreference: ReturnType<
+  addCountryToList: ReturnType<
     typeof vi.fn<
-      (
-        username: string,
-        preference: "homeCountry" | "plannedCountry",
-        countryCode: string,
-      ) => Promise<void>
+      (username: string, list: CountryList, countryCode: string) => Promise<void>
     >
   >;
-  clearCountryPreference: ReturnType<
+  removeCountryFromList: ReturnType<
     typeof vi.fn<
-      (
-        username: string,
-        preference: "homeCountry" | "plannedCountry",
-      ) => Promise<void>
+      (username: string, list: CountryList, countryCode: string) => Promise<void>
     >
   >;
 };
@@ -100,14 +95,14 @@ const citiesApi = vi.hoisted<CitiesApiMock>(() => ({
   deleteMemory: vi.fn(),
 }));
 
-const homeCountryApi = vi.hoisted<HomeCountryApiMock>(() => ({
-  subscribeToCountryPreferences: vi.fn(),
-  saveCountryPreference: vi.fn(),
-  clearCountryPreference: vi.fn(),
+const countryListsApi = vi.hoisted<CountryListsApiMock>(() => ({
+  subscribeToCountryLists: vi.fn(),
+  addCountryToList: vi.fn(),
+  removeCountryFromList: vi.fn(),
 }));
 
 vi.mock("../services/cities", () => citiesApi);
-vi.mock("../services/homeCountry", () => homeCountryApi);
+vi.mock("../services/countryLists", () => countryListsApi);
 vi.mock("../services/firebase", () => ({
   auth: { currentUser: null },
   db: {},
@@ -133,10 +128,7 @@ vi.mock("../components/Map", async () => {
 
 export interface RenderAppOptions {
   cities?: City[];
-  countryPreferences?: {
-    homeCountryCode: string | null;
-    plannedCountryCode: string | null;
-  };
+  countryLists?: Partial<AccountCountryLists>;
   route?: string;
   viewport?: "phone" | "wide";
 }
@@ -197,35 +189,57 @@ function configureFakeCitiesService(fakeCitiesService: FakeCitiesService) {
   citiesApi.deleteMemory.mockImplementation(fakeCitiesService.deleteMemory);
 }
 
-function configureFakeHomeCountryService(countryPreferences: {
-  homeCountryCode: string | null;
-  plannedCountryCode: string | null;
-}) {
-  homeCountryApi.subscribeToCountryPreferences.mockImplementation(
-    (_username, onPreferences) => {
-      onPreferences(countryPreferences);
-      return () => undefined;
+/** Keeps both lists in memory and replays them to the subscriber on change. */
+function configureFakeCountryListsService(initial: Partial<AccountCountryLists>) {
+  const lists: Record<CountryList, Set<string>> = {
+    livedIn: new Set(initial.livedInCountryCodes ?? []),
+    planned: new Set(initial.plannedCountryCodes ?? []),
+  };
+  let listener: ((lists: AccountCountryLists) => void) | null = null;
+  const emit = () =>
+    listener?.({
+      livedInCountryCodes: [...lists.livedIn].sort(),
+      plannedCountryCodes: [...lists.planned].sort(),
+    });
+
+  countryListsApi.subscribeToCountryLists.mockImplementation(
+    (_username, onLists) => {
+      listener = onLists;
+      emit();
+      return () => {
+        listener = null;
+      };
     },
   );
-  homeCountryApi.saveCountryPreference.mockResolvedValue(undefined);
-  homeCountryApi.clearCountryPreference.mockResolvedValue(undefined);
+  countryListsApi.addCountryToList.mockImplementation(
+    async (_username, list, countryCode) => {
+      lists[list].add(countryCode);
+      emit();
+    },
+  );
+  countryListsApi.removeCountryFromList.mockImplementation(
+    async (_username, list, countryCode) => {
+      lists[list].delete(countryCode);
+      emit();
+    },
+  );
 }
 
 export function renderApp({
   cities = [],
-  countryPreferences = { homeCountryCode: null, plannedCountryCode: null },
+  countryLists = {},
   route = "/app/cities",
   viewport = "wide",
 }: RenderAppOptions = {}) {
   installMatchMedia(viewport);
   configureFakeCitiesService(createFakeCitiesService(cities));
-  configureFakeHomeCountryService(countryPreferences);
+  configureFakeCountryListsService(countryLists);
 
   return {
     user: userEvent.setup(),
     ...render(
       <MemoryRouter initialEntries={[route]}>
-        <HomeCountryProvider>
+        <CountryListsProvider>
           <CitiesProvider>
           <Routes>
             <Route
@@ -237,6 +251,7 @@ export function renderApp({
               }
             >
               <Route index element={<AppIndexRedirect />} />
+              <Route path="home" element={<Dashboard />} />
               <Route path="map" element={<MapRoute />} />
               <Route path="cities" element={<CityList />} />
               <Route path="countries" element={<CountriesList />} />
@@ -246,7 +261,7 @@ export function renderApp({
           </Routes>
           <CurrentLocation />
           </CitiesProvider>
-        </HomeCountryProvider>
+        </CountryListsProvider>
       </MemoryRouter>
     ),
   };

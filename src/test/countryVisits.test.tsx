@@ -41,17 +41,17 @@ it("expands a Country and keeps edited visits when reopening its Cities", async 
   ).toBeVisible();
 });
 
-it("does not count a planned destination as a visited Country", async () => {
+it("counts lived-in Countries but not planned ones in the Country total", async () => {
   const { user } = renderApp({
     viewport: "phone",
     cities: [aCity({ id: "paris", country: "France", emoji: "fr" })],
-    countryPreferences: {
-      homeCountryCode: null,
-      plannedCountryCode: "is",
+    countryLists: {
+      livedInCountryCodes: ["fr", "se"],
+      plannedCountryCodes: ["is"],
     },
   });
 
   await user.click(await screen.findByRole("button", { name: "Open menu" }));
 
-  expect(screen.getByText("1 City in 1 Country")).toBeVisible();
+  expect(screen.getByText("1 City in 2 Countries")).toBeVisible();
 });

@@ -3,8 +3,8 @@ import {
   FiMapPin,
   FiGlobe,
   FiHome,
-  FiInfo,
-  FiTag,
+  // FiInfo,
+  // FiTag,
   FiLogOut,
   FiLogIn,
 } from "react-icons/fi";
@@ -13,12 +13,14 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 import { useCities } from "../context/CitiesContext";
+import { useCountryLists } from "../context/CountryListsContext";
+import { beenToCountryCodes } from "../map/countries";
 
 const itemClassName =
   "flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold text-light-1 transition-colors hover:bg-dark-2 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-2";
 
 /**
- * On a phone the bottom bar only moves between the three views, which leaves
+ * On a phone the bottom bar only moves between the app's views, which leaves
  * an Account with no way out of the app and nowhere to sign out from.
  */
 function AppMenu() {
@@ -26,9 +28,10 @@ function AppMenu() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { cities } = useCities();
+  const { livedInCountryCodes } = useCountryLists();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const countryCount = new Set(cities.map((city) => city.country)).size;
+  const countryCount = beenToCountryCodes(cities, livedInCountryCodes).size;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -102,6 +105,15 @@ function AppMenu() {
               <Link
                 className={itemClassName}
                 onClick={() => setIsOpen(false)}
+                to={user ? "/app/home" : "/"}
+              >
+                <FiHome aria-hidden="true" /> Home
+              </Link>
+            </li>
+            <li>
+              <Link
+                className={itemClassName}
+                onClick={() => setIsOpen(false)}
                 to="/app/map"
               >
                 <FiMap aria-hidden="true" /> Map
@@ -125,15 +137,7 @@ function AppMenu() {
                 <FiGlobe aria-hidden="true" /> Countries
               </Link>
             </li>
-            <li>
-              <Link
-                className={itemClassName}
-                onClick={() => setIsOpen(false)}
-                to="/"
-              >
-                <FiHome aria-hidden="true" /> Home
-              </Link>
-            </li>
+            {/* Product and Pricing are hidden for now.
             <li>
               <Link
                 className={itemClassName}
@@ -152,6 +156,7 @@ function AppMenu() {
                 <FiTag aria-hidden="true" /> Pricing
               </Link>
             </li>
+            */}
           </ul>
 
           {user ? (

@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 
 import { aCity } from "./fakeCitiesService";
@@ -17,8 +17,9 @@ it("shows every Country implied by the Account's Cities on a phone", async () =>
     viewport: "phone",
   });
 
-  expect(await screen.findByText("Portugal")).toBeVisible();
-  expect(screen.getByText("Norway")).toBeVisible();
+  const visited = within(await screen.findByRole("list", { name: "Visited" }));
+  expect(visited.getByText("Portugal")).toBeVisible();
+  expect(visited.getByText("Norway")).toBeVisible();
 });
 
 it("shows City details and the Memories section on a phone", async () => {

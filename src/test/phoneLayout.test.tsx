@@ -6,11 +6,11 @@ import { renderApp } from "./renderApp";
 
 afterEach(() => vi.unstubAllGlobals());
 
-it("opens the map view from the app index on a phone", async () => {
+it("opens the Home dashboard from the app index on a phone", async () => {
   renderApp({ route: "/app", viewport: "phone" });
 
-  expect(await screen.findByTestId("map")).toBeVisible();
-  expect(screen.getByRole("link", { name: "Map" })).toHaveAttribute(
+  expect(await screen.findByLabelText("Travel totals")).toBeVisible();
+  expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute(
     "aria-current",
     "page"
   );
