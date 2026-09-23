@@ -16,6 +16,7 @@ import { formatVisitDate } from "../services/visitDate";
 import { fitWithinLongSide } from "./memoryDimensions";
 import PhotoSourceSheet from "./PhotoSourceSheet";
 import Spinner from "./Spinner";
+import VisitDateEditor from "./VisitDateEditor";
 
 const MAX_MEMORIES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -77,6 +78,7 @@ function City() {
   const [isPhotoSourceSheetOpen, setIsPhotoSourceSheetOpen] = useState(false);
   const [memoryError, setMemoryError] = useState("");
   const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null);
+  const [isEditingVisitDate, setIsEditingVisitDate] = useState(false);
   const addMemoryButtonRef = useRef<HTMLButtonElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -222,7 +224,7 @@ function City() {
                 </h1>
               </div>
             </div>
-            {date && (
+            {date ? (
               <div className="flex flex-col gap-2 sm:gap-3">
                 <h2 className="text-xs font-extrabold uppercase tracking-wider text-light-1 sm:text-sm">
                   You went to {cityName} on
@@ -236,11 +238,32 @@ function City() {
                   })}
                 </p>
               </div>
+            ) : (
+              <p className="text-base font-medium text-light-2 sm:text-lg">
+                No visit date saved yet.
+              </p>
             )}
           </div>
         </header>
 
         <div className="space-y-6 p-4 sm:space-y-10 sm:p-8 md:p-10">
+          {isEditingVisitDate ? (
+            <VisitDateEditor
+              city={currentCity}
+              key={currentCity.id}
+              onCancel={() => setIsEditingVisitDate(false)}
+              onSaved={() => setIsEditingVisitDate(false)}
+            />
+          ) : (
+            <button
+              className="min-h-11 rounded-xl border border-brand-1/60 bg-dark-1 px-5 py-3 text-sm font-semibold text-light-2 transition-colors hover:border-brand-2 hover:bg-dark-2 focus:outline-none focus:ring-2 focus:ring-brand-2"
+              onClick={() => setIsEditingVisitDate(true)}
+              type="button"
+            >
+              {date ? "Edit visit date" : "Add visit date"}
+            </button>
+          )}
+
           {notes && (
             <section className="rounded-xl border border-dark-2/30 bg-dark-2/50 p-4 sm:p-6">
               <h2 className="mb-3 text-xs font-extrabold uppercase tracking-wider text-light-1 sm:mb-4 sm:text-sm">

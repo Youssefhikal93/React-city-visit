@@ -20,6 +20,30 @@ export function serializeVisitDate(
       : new Date(selectedDate).toISOString();
 }
 
+export function visitDateForPicker(
+  date: string | null,
+  precision: VisitDatePrecision,
+): Date | null {
+  if (!date) return null;
+
+  const parsedDate = new Date(date);
+  if (Number.isNaN(parsedDate.getTime())) return null;
+
+  if (precision === "month") {
+    return new Date(
+      parsedDate.getUTCFullYear(),
+      parsedDate.getUTCMonth(),
+      1,
+    );
+  }
+
+  return parsedDate;
+}
+
+export function isValidVisitDate(date: Date | null): date is Date {
+  return date !== null && !Number.isNaN(date.getTime());
+}
+
 export function formatVisitDate(
   date: string,
   precision: VisitDatePrecision,

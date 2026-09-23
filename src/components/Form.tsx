@@ -95,8 +95,8 @@ function Form() {
       <div className="duplicate-notice">
         <h2>Already in your list</h2>
         <p>
-          {savedCity.cityName} is saved. You can update its visit count or add
-          more memories.
+          {savedCity.cityName} is saved. Open its details to edit the visit
+          date, update the visit count, or add more Memories.
         </p>
         <Link to={cityDetailTarget(savedCity.id, savedCity.position)}>
           View {savedCity.cityName}
