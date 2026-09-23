@@ -10,6 +10,9 @@ export interface Memory {
   dataUri: string;
 }
 
+/** How precisely an Account remembers when it visited a City. */
+export type VisitDatePrecision = "day" | "month";
+
 /** A city as the rest of the app consumes it, id included. */
 export interface City {
   id: string;
@@ -18,6 +21,7 @@ export interface City {
   emoji: string;
   /** ISO 8601 string, or null for rows written before dates were required. */
   date: string | null;
+  datePrecision: VisitDatePrecision;
   notes: string;
   visitCount?: number;
   memories: Memory[];
@@ -34,13 +38,23 @@ export interface NewCity {
   country: string;
   emoji: string;
   date: Date | string | null;
+  datePrecision: VisitDatePrecision;
   notes: string;
   position: { lat: number | string; lng: number | string };
 }
 
 /** Partial edit to an existing City. */
 export type CityUpdate = Partial<
-  Pick<City, "cityName" | "country" | "emoji" | "date" | "notes" | "visitCount">
+  Pick<
+    City,
+    | "cityName"
+    | "country"
+    | "emoji"
+    | "date"
+    | "datePrecision"
+    | "notes"
+    | "visitCount"
+  >
 >;
 
 /** The city shape as it actually sits in the Realtime Database. */
@@ -49,6 +63,7 @@ export interface StoredCity {
   country?: string;
   emoji?: string;
   date?: string;
+  datePrecision?: VisitDatePrecision;
   notes?: string;
   visitCount?: number;
   image?: string | null;

@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 
 import { CitiesProvider } from "./context/CitiesContext";
 import { AuthProvider } from "./context/AuthContext";
+import { HomeCountryProvider } from "./context/HomeCountryContext";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import AppIndexRedirect from "./pages/AppIndexRedirect";
 
@@ -31,7 +32,8 @@ import Signup from "./pages/SignUp";
 function App() {
   return (
     <AuthProvider>
-      <CitiesProvider>
+      <HomeCountryProvider>
+        <CitiesProvider>
         <BrowserRouter>
           <Suspense fallback={<SpinnerFullPage />}>
             <Routes>
@@ -59,7 +61,8 @@ function App() {
             </Routes>
           </Suspense>
         </BrowserRouter>
-      </CitiesProvider>
+        </CitiesProvider>
+      </HomeCountryProvider>
     </AuthProvider>
   );
 }

@@ -9,6 +9,7 @@ import CityList from "../components/CityList";
 import CountriesList from "../components/CountriesList";
 import Form from "../components/Form";
 import { CitiesProvider } from "../context/CitiesContext";
+import { HomeCountryProvider } from "../context/HomeCountryContext";
 import ProtectedRoute from "../pages/ProtectedRoute";
 import AppIndexRedirect from "../pages/AppIndexRedirect";
 import AppLayout from "../pages/AppLayout";
@@ -57,6 +58,38 @@ type CitiesApiMock = {
   >;
 };
 
+type HomeCountryApiMock = {
+  subscribeToCountryPreferences: ReturnType<
+    typeof vi.fn<
+      (
+        username: string,
+        onPreferences: (preferences: {
+          homeCountryCode: string | null;
+          plannedCountryCode: string | null;
+        }) => void,
+        onError: (error: Error) => void,
+      ) => Unsubscribe
+    >
+  >;
+  saveCountryPreference: ReturnType<
+    typeof vi.fn<
+      (
+        username: string,
+        preference: "homeCountry" | "plannedCountry",
+        countryCode: string,
+      ) => Promise<void>
+    >
+  >;
+  clearCountryPreference: ReturnType<
+    typeof vi.fn<
+      (
+        username: string,
+        preference: "homeCountry" | "plannedCountry",
+      ) => Promise<void>
+    >
+  >;
+};
+
 const citiesApi = vi.hoisted<CitiesApiMock>(() => ({
   subscribeToCities: vi.fn(),
   fetchCity: vi.fn(),
@@ -67,7 +100,14 @@ const citiesApi = vi.hoisted<CitiesApiMock>(() => ({
   deleteMemory: vi.fn(),
 }));
 
+const homeCountryApi = vi.hoisted<HomeCountryApiMock>(() => ({
+  subscribeToCountryPreferences: vi.fn(),
+  saveCountryPreference: vi.fn(),
+  clearCountryPreference: vi.fn(),
+}));
+
 vi.mock("../services/cities", () => citiesApi);
+vi.mock("../services/homeCountry", () => homeCountryApi);
 vi.mock("../services/firebase", () => ({
   auth: { currentUser: null },
   db: {},
@@ -93,6 +133,10 @@ vi.mock("../components/Map", async () => {
 
 export interface RenderAppOptions {
   cities?: City[];
+  countryPreferences?: {
+    homeCountryCode: string | null;
+    plannedCountryCode: string | null;
+  };
   route?: string;
   viewport?: "phone" | "wide";
 }
@@ -153,19 +197,36 @@ function configureFakeCitiesService(fakeCitiesService: FakeCitiesService) {
   citiesApi.deleteMemory.mockImplementation(fakeCitiesService.deleteMemory);
 }
 
+function configureFakeHomeCountryService(countryPreferences: {
+  homeCountryCode: string | null;
+  plannedCountryCode: string | null;
+}) {
+  homeCountryApi.subscribeToCountryPreferences.mockImplementation(
+    (_username, onPreferences) => {
+      onPreferences(countryPreferences);
+      return () => undefined;
+    },
+  );
+  homeCountryApi.saveCountryPreference.mockResolvedValue(undefined);
+  homeCountryApi.clearCountryPreference.mockResolvedValue(undefined);
+}
+
 export function renderApp({
   cities = [],
+  countryPreferences = { homeCountryCode: null, plannedCountryCode: null },
   route = "/app/cities",
   viewport = "wide",
 }: RenderAppOptions = {}) {
   installMatchMedia(viewport);
   configureFakeCitiesService(createFakeCitiesService(cities));
+  configureFakeHomeCountryService(countryPreferences);
 
   return {
     user: userEvent.setup(),
     ...render(
       <MemoryRouter initialEntries={[route]}>
-        <CitiesProvider>
+        <HomeCountryProvider>
+          <CitiesProvider>
           <Routes>
             <Route
               path="app"
@@ -184,7 +245,8 @@ export function renderApp({
             </Route>
           </Routes>
           <CurrentLocation />
-        </CitiesProvider>
+          </CitiesProvider>
+        </HomeCountryProvider>
       </MemoryRouter>
     ),
   };

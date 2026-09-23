@@ -25,6 +25,20 @@
           "$other": { ".validate": false }
         },
 
+        "settings": {
+          // Private Account preferences use the same proved-session check as Cities.
+          ".read": "auth != null && root.child('sessions/' + auth.uid + '/username').val() === $username",
+          ".write": "auth != null && root.child('sessions/' + auth.uid + '/username').val() === $username",
+
+          "homeCountry": {
+            ".validate": "!newData.exists() || (newData.isString() && newData.val().matches(/^[a-z]{2}$/))"
+          },
+          "plannedCountry": {
+            ".validate": "!newData.exists() || (newData.isString() && newData.val().matches(/^[a-z]{2}$/))"
+          },
+          "$other": { ".validate": false }
+        },
+
         // Only reachable by a session that has proved this account's PIN.
         "cities": {
           ".read": "auth != null && root.child('sessions/' + auth.uid + '/username').val() === $username",
@@ -39,6 +53,7 @@
             "country": { ".validate": "newData.isString() && newData.val().length <= 120" },
             "emoji": { ".validate": "newData.isString() && newData.val().length <= 16" },
             "date": { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "datePrecision": { ".validate": "newData.val() === 'day' || newData.val() === 'month'" },
             "visitCount": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() % 1 === 0" },
             "notes": { ".validate": "newData.isString() && newData.val().length <= 2000" },
             "image": { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 2000000)" },

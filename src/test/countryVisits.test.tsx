@@ -40,3 +40,18 @@ it("expands a Country and keeps edited visits when reopening its Cities", async 
     ),
   ).toBeVisible();
 });
+
+it("does not count a planned destination as a visited Country", async () => {
+  const { user } = renderApp({
+    viewport: "phone",
+    cities: [aCity({ id: "paris", country: "France", emoji: "fr" })],
+    countryPreferences: {
+      homeCountryCode: null,
+      plannedCountryCode: "is",
+    },
+  });
+
+  await user.click(await screen.findByRole("button", { name: "Open menu" }));
+
+  expect(screen.getByText("1 City in 1 Country")).toBeVisible();
+});

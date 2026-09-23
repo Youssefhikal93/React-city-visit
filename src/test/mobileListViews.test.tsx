@@ -41,7 +41,7 @@ it("shows City details and the Memories section on a phone", async () => {
   expect(screen.getByRole("heading", { name: "Memories" })).toBeVisible();
 });
 
-it("shows the Add City fields and submit control on a phone", async () => {
+it("lets an Account choose the visit date precision on a phone", async () => {
   vi.stubGlobal(
     "fetch",
     vi.fn().mockResolvedValue({
@@ -53,7 +53,7 @@ it("shows the Add City fields and submit control on a phone", async () => {
     })
   );
 
-  renderApp({
+  const { user } = renderApp({
     route: "/app/form?lat=38.7223&lng=-9.1393",
     viewport: "phone",
   });
@@ -61,6 +61,10 @@ it("shows the Add City fields and submit control on a phone", async () => {
   expect(await screen.findByLabelText("City name")).toBeVisible();
   expect(screen.getByLabelText("Country")).toHaveValue("Portugal");
   expect(screen.getByLabelText(/When did you go to Lisbon/)).toBeVisible();
+  expect(screen.getByRole("radio", { name: "Day, month and year" })).toBeChecked();
+  expect(screen.getByRole("radio", { name: "Month and year" })).not.toBeChecked();
+  await user.click(screen.getByRole("radio", { name: "Month and year" }));
+  expect(screen.getByRole("radio", { name: "Month and year" })).toBeChecked();
   expect(screen.getByLabelText(/Notes about your trip to Lisbon/)).toBeVisible();
   expect(screen.getByRole("button", { name: "Add" })).toBeVisible();
 });

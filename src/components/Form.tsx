@@ -9,6 +9,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useCities } from "../context/CitiesContext";
 import { reverseGeocode } from "../services/geocoding";
+import type { VisitDatePrecision } from "../types";
 
 export function convertToEmoji(countryCode: string) {
   return (
@@ -25,6 +26,7 @@ function Form() {
   const [cityName, setCityName] = useState("");
   const [country, setCountry] = useState("");
   const [date, setDate] = useState(new Date());
+  const [datePrecision, setDatePrecision] = useState<VisitDatePrecision>("day");
   const [notes, setNotes] = useState("");
   const [lat, lng] = useURLPosition();
   const [isLoadingGeoCoding, setIsLoadingGeoCoding] = useState(false);
@@ -70,6 +72,7 @@ function Form() {
       country,
       emoji,
       date,
+      datePrecision,
       notes,
       position: { lat, lng },
     };
@@ -164,11 +167,33 @@ function Form() {
         >
           When did you go to {cityName || "this city"}?
         </label>
+        <fieldset className="flex gap-4 text-sm text-light-1">
+          <legend className="sr-only">Visit date precision</legend>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="datePrecision"
+              checked={datePrecision === "day"}
+              onChange={() => setDatePrecision("day")}
+            />
+            Day, month and year
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="datePrecision"
+              checked={datePrecision === "month"}
+              onChange={() => setDatePrecision("month")}
+            />
+            Month and year
+          </label>
+        </fieldset>
         <DatePicker
           id="date"
           onChange={(next) => next && setDate(next)}
           selected={date}
-          dateFormat="dd/MM/yyyy"
+          showMonthYearPicker={datePrecision === "month"}
+          dateFormat={datePrecision === "month" ? "MM/yyyy" : "dd/MM/yyyy"}
           className="min-h-11 w-full rounded-lg border-none bg-light-2 p-2 text-base text-dark-0 focus:outline-none focus:ring-2 focus:ring-brand-2"
           wrapperClassName="w-full"
           withPortal

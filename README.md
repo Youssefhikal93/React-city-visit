@@ -130,9 +130,12 @@ users/
     profile/                 <- readable, so signup can check availability
       displayName: "Youssef" <- the casing as typed
       createdAt, lastLoginAt
+    settings/                <- private; requires the Account's proved session
+      homeCountry: "se"      <- optional ISO 3166-1 alpha-2 country code
+      plannedCountry: "is"   <- optional ISO 3166-1 alpha-2 country code
     cities/
       -PabcXYZ.../           <- database push key, used as the city id
-        cityName, country, emoji, date, notes
+        cityName, country, emoji, date, datePrecision, notes
         position: { lat, lng }
         memories/            <- up to five base64 JPEGs, long side 800px
           -PdefUVW...        <- push key, used as the memory id
@@ -195,6 +198,18 @@ files and nothing else:
 `services/geocoding.ts` is the one other outside call: it names the place at a
 Position, shared by the Add City form and the map's "Add ‹place›?" popup so the
 two cannot disagree about what you tapped.
+
+### Country boundaries
+
+The map includes Natural Earth's public-domain 1:50m Admin 0 country
+boundaries, reduced to geometry and Natural Earth's `ISO_A2_EH` identifiers.
+Visited Country fills derive from the existing `emoji` country-code field on each saved City.
+An Account's optional home Country and planned destination are private
+`settings/homeCountry` and `settings/plannedCountry` values. Planned destination takes
+precedence over home Country, which takes precedence over visited Country; neither
+selection changes City records or visited totals. Natural Earth requests the courtesy
+credit Made with Natural Earth. The source URL and license details are in
+[`src/map/data/NATURAL_EARTH.md`](src/map/data/NATURAL_EARTH.md).
 
 ### Why photos live in the database
 

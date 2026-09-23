@@ -19,6 +19,7 @@ import { FiNavigation } from "react-icons/fi";
 import { findSavedCity } from "../services/cityIdentity";
 
 import { useCities } from "../context/CitiesContext";
+import { useHomeCountry } from "../context/HomeCountryContext";
 import { reverseGeocode, type PlaceName } from "../services/geocoding";
 import { useGeolocation } from "../hooks/useGeoLocation";
 import { useURLPosition } from "../hooks/useURLPosition";
@@ -37,6 +38,10 @@ import {
   type WorldPlaceSearchResult,
 } from "../map/mapBehaviour";
 import type { City, Position } from "../types";
+import {
+  CountryVisitLegend,
+  CountryVisitOverlay,
+} from "../map/CountryVisitOverlay";
 import { MapSearch } from "./MapSearch";
 import Spinner from "./Spinner";
 
@@ -52,6 +57,7 @@ function Map() {
   const navigate = useNavigate();
   const { search } = useLocation();
   const { cities, clearError, isLoading } = useCities();
+  const { countryCode: homeCountryCode, plannedCountryCode } = useHomeCountry();
   const {
     getPosition: getPositionGeoLocation,
     isLoading: isLoadingGeoLocation,
@@ -144,6 +150,12 @@ function Map() {
           errorTileUrl="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgZmlsbD0iIzJkMzQzOSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjYWFhIiBmb250LXNpemU9IjE0Ij5NYXAgVGlsZSBVbmF2YWlsYWJsZTwvdGV4dD48L3N2Zz4="
         />
 
+        <CountryVisitOverlay
+          cities={cities}
+          homeCountryCode={homeCountryCode}
+          plannedCountryCode={plannedCountryCode}
+        />
+
         {cities.map((city) => (
           <Marker
             title={city.cityName}
@@ -214,6 +226,8 @@ function Map() {
         onCityPicked={selectSavedCity}
         onWorldPlacePicked={selectWorldPlace}
       />
+
+      <CountryVisitLegend />
 
       <button
         aria-label="Use your Position"
