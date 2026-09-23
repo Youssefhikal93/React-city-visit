@@ -11,12 +11,12 @@ import type { City } from "../types";
 
 function CountryMap({
   cities,
-  homeCountryCode = null,
-  plannedCountryCode = null,
+  livedIn = [],
+  planned = [],
 }: {
   cities: City[];
-  homeCountryCode?: string | null;
-  plannedCountryCode?: string | null;
+  livedIn?: string[];
+  planned?: string[];
 }) {
   return (
     <MapContainer
@@ -28,121 +28,76 @@ function CountryMap({
     >
       <CountryVisitOverlay
         cities={cities}
-        homeCountryCode={homeCountryCode}
-        plannedCountryCode={plannedCountryCode}
+        livedInCountryCodes={livedIn}
+        plannedCountryCodes={planned}
       />
     </MapContainer>
   );
+}
+
+const VISITED = "#22c29b";
+const LIVED_IN = "#fbbf24";
+const PLANNED = "#a78bfa";
+
+function paths(container: HTMLElement, fill?: string) {
+  return container.querySelectorAll(
+    fill
+      ? `.leaflet-overlay-pane path[fill="${fill}"]`
+      : ".leaflet-overlay-pane path",
+  );
+}
+
+function expectOnlyFill(container: HTMLElement, fill: string) {
+  expect(paths(container)).not.toHaveLength(0);
+  paths(container).forEach((path) => expect(path).toHaveAttribute("fill", fill));
 }
 
 describe("CountryVisitOverlay", () => {
   test("removes non-interactive SVG country paths after deleting the last City", () => {
     const paris = aCity({ id: "paris", emoji: "fr" });
     const { container, rerender } = render(<CountryMap cities={[paris]} />);
-    const countryPaths = () =>
-      container.querySelectorAll(".leaflet-overlay-pane path");
 
-    expect(countryPaths()).not.toHaveLength(0);
-    countryPaths().forEach((path) =>
+    expect(paths(container)).not.toHaveLength(0);
+    paths(container).forEach((path) =>
       expect(path).not.toHaveClass("leaflet-interactive"),
     );
 
     rerender(<CountryMap cities={[]} />);
 
-    expect(countryPaths()).toHaveLength(0);
+    expect(paths(container)).toHaveLength(0);
   });
 
-  test("restores visited coloring after clearing a home Country that is also visited", () => {
+  test("uses lived in, then planned, then visited color precedence", () => {
     const paris = aCity({ id: "paris", emoji: "fr" });
     const { container, rerender } = render(
-      <CountryMap cities={[paris]} homeCountryCode="fr" />,
+      <CountryMap cities={[paris]} livedIn={["fr"]} planned={["fr"]} />,
     );
-    const countryPaths = () =>
-      container.querySelectorAll(".leaflet-overlay-pane path");
+    expectOnlyFill(container, LIVED_IN);
 
-    expect(countryPaths()).not.toHaveLength(0);
-    countryPaths().forEach((path) =>
-      expect(path).toHaveAttribute("fill", "#fbbf24"),
-    );
+    rerender(<CountryMap cities={[paris]} planned={["fr"]} />);
+    expectOnlyFill(container, PLANNED);
 
     rerender(<CountryMap cities={[paris]} />);
-
-    countryPaths().forEach((path) =>
-      expect(path).toHaveAttribute("fill", "#22c29b"),
-    );
+    expectOnlyFill(container, VISITED);
   });
 
-  test("uses planned, then home, then visited color precedence", () => {
-    const paris = aCity({ id: "paris", emoji: "fr" });
-    const { container, rerender } = render(
-      <CountryMap
-        cities={[paris]}
-        homeCountryCode="fr"
-        plannedCountryCode="fr"
-      />,
-    );
-    const countryPaths = () =>
-      container.querySelectorAll(".leaflet-overlay-pane path");
-
-    expect(countryPaths()).not.toHaveLength(0);
-    countryPaths().forEach((path) =>
-      expect(path).toHaveAttribute("fill", "#a78bfa"),
-    );
-
-    rerender(<CountryMap cities={[paris]} homeCountryCode="fr" />);
-    expect(countryPaths()).not.toHaveLength(0);
-    countryPaths().forEach((path) =>
-      expect(path).toHaveAttribute("fill", "#fbbf24"),
-    );
-
-    rerender(<CountryMap cities={[paris]} />);
-    expect(countryPaths()).not.toHaveLength(0);
-    countryPaths().forEach((path) =>
-      expect(path).toHaveAttribute("fill", "#22c29b"),
-    );
-  });
-
-  test("renders distinct home and planned Countries with their own colors", () => {
+  test("colors every Country on each list, with or without a City", () => {
     const { container } = render(
-      <CountryMap homeCountryCode="fr" cities={[]} plannedCountryCode="is" />,
+      <CountryMap cities={[]} livedIn={["fr", "se"]} planned={["is", "jp"]} />,
     );
+    const livedInCount = paths(container, LIVED_IN).length;
 
-    const homePaths = container.querySelectorAll(
-      '.leaflet-overlay-pane path[fill="#fbbf24"]',
-    );
-    const plannedPaths = container.querySelectorAll(
-      '.leaflet-overlay-pane path[fill="#a78bfa"]',
-    );
-
-    expect(homePaths).not.toHaveLength(0);
-    expect(plannedPaths).not.toHaveLength(0);
-  });
-
-  test("shows a planned destination without a saved City", () => {
-    const { container } = render(
-      <CountryMap cities={[]} plannedCountryCode="is" />,
-    );
-
-    const countryPaths = container.querySelectorAll(
-      ".leaflet-overlay-pane path",
-    );
-    expect(countryPaths).not.toHaveLength(0);
-    countryPaths.forEach((path) =>
-      expect(path).toHaveAttribute("fill", "#a78bfa"),
-    );
+    expect(livedInCount).toBeGreaterThanOrEqual(2);
+    expect(paths(container, PLANNED).length).toBeGreaterThanOrEqual(2);
+    expect(paths(container, VISITED)).toHaveLength(0);
   });
 
   test("shows a visible legend for the Country fill", () => {
     render(<CountryVisitLegend />);
 
-    expect(screen.getByLabelText("Map legend")).toHaveTextContent(
-      "Visited Country",
-    );
-    expect(screen.getByLabelText("Map legend")).toHaveTextContent(
-      "Home Country",
-    );
-    expect(screen.getByLabelText("Map legend")).toHaveTextContent(
-      "Planned destination",
-    );
+    const legend = screen.getByLabelText("Map legend");
+    expect(legend).toHaveTextContent("Lived in");
+    expect(legend).toHaveTextContent("Visited");
+    expect(legend).toHaveTextContent("Planned");
   });
 });

@@ -12,6 +12,9 @@ const citiesApi = vi.hoisted(() => ({
 }));
 
 vi.mock("../services/cities", () => citiesApi);
+vi.mock("../services/countryLists", () => ({
+  removeCountryFromList: vi.fn(async () => undefined),
+}));
 vi.mock("../context/AuthContext", () => ({
   useAuth: () => ({ user: { username: "tester" } }),
 }));

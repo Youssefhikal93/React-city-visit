@@ -55,15 +55,17 @@ export function visitedCountryBoundaries(
   };
 }
 
-export function countryPreferenceBoundaries(
-  countryCode: string | null,
+export function countryListBoundaries(
+  countryCodes: string[],
+  excludedCountryCodes = new Set<string>(),
 ): CountryBoundaryCollection {
+  const listedCountryCodes = new Set(countryCodes);
   return {
     type: "FeatureCollection",
-    features: countryCode
-      ? allCountryBoundaries.features.filter(
-          (country) => country.properties.countryCode === countryCode,
-        )
-      : [],
+    features: allCountryBoundaries.features.filter(
+      (country) =>
+        !excludedCountryCodes.has(country.properties.countryCode) &&
+        listedCountryCodes.has(country.properties.countryCode),
+    ),
   };
 }

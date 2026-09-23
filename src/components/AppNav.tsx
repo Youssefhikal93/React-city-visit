@@ -83,14 +83,28 @@ function AppNav() {
   const { clearError } = useCities();
 
   return (
-    <nav className="mt-8 mb-2 w-50">
+    <nav className="mt-8 mb-2 w-full max-w-xs">
       <ul className="flex bg-dark-2 rounded-lg list-none h-8 text-xs overflow-hidden text-center items-center">
+        <li className="flex-1">
+          <NavLink
+            to="home"
+            className={({ isActive }) =>
+              `text-light-2 hover:text-white block uppercase text-sm font-semibold px-2 py-3 text-center transition-all duration-300 no-underline ${
+                isActive
+                  ? "bg-brand-2 text-white shadow-lg"
+                  : "hover:bg-dark-1 hover:scale-105"
+              }`
+            }
+          >
+            Home
+          </NavLink>
+        </li>
         <li className="flex-1">
           <NavLink
             to="cities"
             onClick={() => clearError()}
             className={({ isActive }) =>
-              `text-light-2 hover:text-white block uppercase text-sm font-semibold px-4 py-3 text-center transition-all duration-300 no-underline ${
+              `text-light-2 hover:text-white block uppercase text-sm font-semibold px-2 py-3 text-center transition-all duration-300 no-underline ${
                 isActive
                   ? "bg-brand-2 text-white shadow-lg"
                   : "hover:bg-dark-1 hover:scale-105"
@@ -104,7 +118,7 @@ function AppNav() {
           <NavLink
             to="countries"
             className={({ isActive }) =>
-              `text-light-2 hover:text-white block uppercase text-sm font-semibold px-4 py-3 text-center transition-all duration-300 no-underline ${
+              `text-light-2 hover:text-white block uppercase text-sm font-semibold px-2 py-3 text-center transition-all duration-300 no-underline ${
                 isActive
                   ? "bg-brand-1 text-white shadow-lg"
                   : "hover:bg-dark-1 hover:scale-105"

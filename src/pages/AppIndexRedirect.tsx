@@ -1,11 +1,8 @@
 import { Navigate } from "react-router-dom";
 
-import { useIsPhone } from "../hooks/useIsPhone";
-
+/** Signing in lands on the Home dashboard on every screen size. */
 function AppIndexRedirect() {
-  const isPhone = useIsPhone();
-
-  return <Navigate replace to={isPhone ? "map" : "cities"} />;
+  return <Navigate replace to="home" />;
 }
 
 export default AppIndexRedirect;

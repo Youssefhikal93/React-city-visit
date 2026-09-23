@@ -3,7 +3,7 @@ import { lazy, Suspense } from "react";
 
 import { CitiesProvider } from "./context/CitiesContext";
 import { AuthProvider } from "./context/AuthContext";
-import { HomeCountryProvider } from "./context/HomeCountryContext";
+import { CountryListsProvider } from "./context/CountryListsContext";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import AppIndexRedirect from "./pages/AppIndexRedirect";
 
@@ -14,14 +14,15 @@ import AppIndexRedirect from "./pages/AppIndexRedirect";
 // import PageNotFound from "./pages/PageNotFound";
 // import Login from "./pages/Login";
 const HomePage = lazy(() => import("./pages/Homepage"));
-const Pricing = lazy(() => import("./pages/Pricing"));
+// const Pricing = lazy(() => import("./pages/Pricing"));
 const AppLayout = lazy(() => import("./pages/AppLayout"));
-const Product = lazy(() => import("./pages/Product"));
+// const Product = lazy(() => import("./pages/Product"));
 const Login = lazy(() => import("./pages/Login"));
 const PageNotFound = lazy(() => import("./pages/PageNotFound"));
 
 import CityList from "./components/CityList";
 import CountriesList from "./components/CountriesList";
+import Dashboard from "./components/Dashboard";
 import City from "./components/City";
 import Form from "./components/Form";
 import MapRoute from "./pages/MapRoute";
@@ -32,14 +33,15 @@ import Signup from "./pages/SignUp";
 function App() {
   return (
     <AuthProvider>
-      <HomeCountryProvider>
+      <CountryListsProvider>
         <CitiesProvider>
         <BrowserRouter>
           <Suspense fallback={<SpinnerFullPage />}>
             <Routes>
               <Route path="/" element={<HomePage />}></Route>
-              <Route path="product" element={<Product />}></Route>
-              <Route path="pricing" element={<Pricing />}></Route>
+              {/* Product and Pricing are hidden for now. */}
+              {/* <Route path="product" element={<Product />}></Route> */}
+              {/* <Route path="pricing" element={<Pricing />}></Route> */}
               <Route path="/signup" element={<Signup />} />
               <Route path="login" element={<Login />}></Route>
               <Route
@@ -51,6 +53,7 @@ function App() {
                 }
               >
                 <Route index element={<AppIndexRedirect />} />
+                <Route path="home" element={<Dashboard />} />
                 <Route path="map" element={<MapRoute />} />
                 <Route path="cities" element={<CityList />} />
                 <Route path="countries" element={<CountriesList />} />
@@ -62,7 +65,7 @@ function App() {
           </Suspense>
         </BrowserRouter>
         </CitiesProvider>
-      </HomeCountryProvider>
+      </CountryListsProvider>
     </AuthProvider>
   );
 }

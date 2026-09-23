@@ -11,6 +11,7 @@ import {
 import { useAuth } from "./AuthContext";
 import { findSavedCity } from "../services/cityIdentity";
 import * as citiesApi from "../services/cities";
+import { removeCountryFromList } from "../services/countryLists";
 import type { City, CityUpdate, NewCity } from "../types";
 
 interface CitiesState {
@@ -166,6 +167,14 @@ function CitiesProvider({ children }: { children: ReactNode }) {
         }
         const created = await citiesApi.createCity(username, newCity);
         dispatch({ type: "city/created", payload: created });
+        // A planned Country has been reached once it holds a City.
+        removeCountryFromList(
+          username,
+          "planned",
+          created.emoji.trim().toLowerCase(),
+        ).catch((error: unknown) =>
+          console.error("Couldn't remove the reached planned Country:", error),
+        );
         return { success: true };
       } catch (err) {
         console.error("Failed to create city:", err);

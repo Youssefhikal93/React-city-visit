@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 
@@ -40,12 +40,19 @@ describe("the menu", () => {
     expect(menu.getByRole("link", { name: /cities/i })).toBeVisible();
     expect(menu.getByRole("link", { name: /home/i })).toBeVisible();
     expect(menu.getByRole("button", { name: /sign out/i })).toBeVisible();
-    expect(
-      menu.queryByRole("combobox", { name: "Home Country" }),
-    ).not.toBeInTheDocument();
-    expect(
-      menu.queryByRole("combobox", { name: "Planned destination" }),
-    ).not.toBeInTheDocument();
+  });
+
+  it("lists Home first and hides Products and Pricing", async () => {
+    const { user } = renderApp({ route: "/app/map", viewport: "phone" });
+
+    await user.click(await screen.findByRole("button", { name: /open menu/i }));
+
+    const menu = within(screen.getByRole("navigation", { name: "Menu" }));
+    const links = menu.getAllByRole("link");
+    expect(links[0]).toHaveTextContent("Home");
+    expect(links[0]).toHaveAttribute("href", "/app/home");
+    expect(menu.queryByRole("link", { name: /products/i })).not.toBeInTheDocument();
+    expect(menu.queryByRole("link", { name: /pricing/i })).not.toBeInTheDocument();
   });
 
   it("closes on Escape", async () => {
@@ -68,48 +75,32 @@ describe("the menu", () => {
   });
 });
 
-describe("Country preferences in the phone navigation", () => {
-  it("opens Home Country, saves a choice, and keeps the current route", async () => {
-    const { user } = renderApp({ route: "/app/countries", viewport: "phone" });
-    const views = screen.getByRole("navigation", { name: "Views" });
-    const homeButton = within(views).getByRole("button", {
-      name: "Home Country",
-    });
+describe("the phone bottom bar", () => {
+  it("offers Home, Map, Cities, and Countries tabs only", async () => {
+    renderApp({ route: "/app/countries", viewport: "phone" });
+    const views = within(screen.getByRole("navigation", { name: "Views" }));
 
-    await user.click(homeButton);
-    const homeDialog = screen.getByRole("dialog", { name: "Home Country" });
-    const homeSelector = within(homeDialog).getByRole("combobox", {
-      name: "Home Country",
-    });
-    expect(screen.getByTestId("current-location")).toHaveTextContent(
-      "/app/countries",
+    expect(views.getAllByRole("link").map((tab) => tab.textContent)).toEqual([
+      "Home",
+      "Map",
+      "Cities",
+      "Countries",
+    ]);
+    expect(views.getByRole("link", { name: "Countries" })).toHaveAttribute(
+      "aria-current",
+      "page",
     );
-
-    await user.selectOptions(homeSelector, "se");
-    expect(homeSelector).toHaveValue("se");
+    expect(views.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("opens Planned destination and returns focus to its trigger after dismissal", async () => {
-    const { user } = renderApp({ route: "/app/countries", viewport: "phone" });
-    const views = screen.getByRole("navigation", { name: "Views" });
-    const destinationButton = within(views).getByRole("button", {
-      name: "Planned destination",
-    });
+  it("opens the Home dashboard from its tab", async () => {
+    const { user } = renderApp({ route: "/app/map", viewport: "phone" });
+    const views = within(screen.getByRole("navigation", { name: "Views" }));
 
-    await user.click(destinationButton);
-    expect(
-      within(
-        screen.getByRole("dialog", { name: "Planned destination" }),
-      ).getByRole("combobox", { name: "Planned destination" }),
-    ).toBeVisible();
-    await user.keyboard("{Escape}");
+    await user.click(views.getByRole("link", { name: "Home" }));
 
-    await waitFor(() =>
-      expect(
-        screen.queryByRole("dialog", { name: "Planned destination" }),
-      ).not.toBeInTheDocument(),
-    );
-    expect(destinationButton).toHaveFocus();
+    expect(screen.getByTestId("current-location")).toHaveTextContent("/app/home");
+    expect(await screen.findByLabelText("Travel totals")).toBeVisible();
   });
 });
 

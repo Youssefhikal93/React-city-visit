@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { FiTrash2 } from "react-icons/fi";
 import { useCities } from "../context/CitiesContext";
-import { useHomeCountry } from "../context/HomeCountryContext";
+import { useCountryLists } from "../context/CountryListsContext";
 import { cityDetailTarget } from "../map/mapBehaviour";
 import { formatVisitDate } from "../services/visitDate";
 import type { City } from "../types";
@@ -9,10 +9,10 @@ import VisitCounter from "./VisitCounter";
 
 function CityItem({ city }: { city: City }) {
   const { currentCity, deleteCity } = useCities();
-  const { homeCountryCode, plannedCountryCode } = useHomeCountry();
+  const { livedInCountryCodes, plannedCountryCodes } = useCountryLists();
   const countryCode = city.emoji.toLowerCase();
-  const isHomeCountry = countryCode === homeCountryCode;
-  const isNextDestination = countryCode === plannedCountryCode;
+  const isLivedIn = livedInCountryCodes.includes(countryCode);
+  const isPlanned = plannedCountryCodes.includes(countryCode);
   return (
     <li
       className={
@@ -31,16 +31,16 @@ function CityItem({ city }: { city: City }) {
         <div>
           <h3>{city.cityName}</h3>
           <p>{city.country}</p>
-          {(isHomeCountry || isNextDestination) && (
+          {(isLivedIn || isPlanned) && (
             <div className="mt-2 flex flex-wrap gap-1" aria-label="Country status">
-              {isHomeCountry && (
+              {isLivedIn && (
                 <span className="rounded-full border border-[#d97706] bg-[#fbbf24]/20 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-[#fbbf24]">
-                  Home Country
+                  Lived in
                 </span>
               )}
-              {isNextDestination && (
+              {isPlanned && (
                 <span className="rounded-full border border-[#6d28d9] bg-[#a78bfa]/20 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-[#c4b5fd]">
-                  Next destination
+                  Planned
                 </span>
               )}
             </div>
