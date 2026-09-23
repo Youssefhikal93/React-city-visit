@@ -362,6 +362,7 @@ function City() {
             />
           </section>
 
+          {/* Wikipedia link is hidden for now.
           <section className="rounded-xl border border-dark-2/30 bg-dark-2/30 p-4 sm:p-6">
             <h2 className="mb-3 text-xs font-extrabold uppercase tracking-wider text-light-1 sm:mb-4 sm:text-sm">
               Learn more
@@ -375,6 +376,7 @@ function City() {
               Check out {cityName} on Wikipedia &rarr;
             </a>
           </section>
+          */}
 
           <div className="flex flex-wrap gap-3">
             <button

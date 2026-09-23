@@ -283,7 +283,8 @@ button:disabled {
 .countries-screen,
 .dashboard {
   overflow-y: auto;
-  padding-bottom: 1rem;
+  /* Room for focus rings, and a gap before the scrollbar. */
+  padding: 0 0.5rem 1rem 0.2rem;
 }
 .countries-screen .country-list {
   overflow-y: visible;
@@ -365,7 +366,7 @@ button:disabled {
   flex: 1;
   min-width: 0;
   font-size: 0.95rem;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .dashboard-stats {
   display: grid;
@@ -440,6 +441,152 @@ button:disabled {
   background: #72e0b5;
   color: #10201c;
   border-color: #72e0b5;
+}
+.visit-date-editor {
+  border: 1px solid #72e0b544;
+  border-radius: 16px;
+  background: #203035;
+  padding: 1rem;
+}
+.visit-date-cancel {
+  min-height: 44px;
+  padding: 0 0.85rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #b2bfbc;
+  flex-shrink: 0;
+}
+.visit-date-cancel:hover {
+  background: #ffffff0d;
+  color: #ececec;
+}
+.visit-date-precision {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin-top: 1rem;
+  padding: 0.25rem;
+  border: 1px solid #ffffff12;
+  border-radius: 12px;
+  background: #122126;
+}
+.visit-date-precision label {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+.visit-date-precision span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9px;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #a0b5b1;
+  transition: background-color 0.15s, color 0.15s;
+}
+.visit-date-precision input:checked + span {
+  background: #72e0b5;
+  color: #10201c;
+}
+.visit-date-precision input:focus-visible + span {
+  outline: 2px solid #72e0b5;
+  outline-offset: 2px;
+}
+.visit-date-label {
+  display: block;
+  margin-top: 1rem;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #83aaa2;
+}
+.visit-date-input {
+  margin-top: 0.5rem;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 0.9rem;
+  border: 1px solid #ffffff14;
+  border-radius: 12px;
+  background: #122126;
+  color: #ececec;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.visit-date-input:focus {
+  outline: none;
+  border-color: #72e0b5;
+  box-shadow: 0 0 0 3px #72e0b533;
+}
+.visit-date-save {
+  margin-top: 1rem;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  background: #72e0b5;
+  color: #10201c;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+.visit-date-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* react-datepicker, restyled to the journal palette */
+.journal-datepicker.react-datepicker {
+  border: 1px solid #ffffff18;
+  border-radius: 16px;
+  background: #1a2a2e;
+  color: #ececec;
+  font-family: "Manrope", sans-serif;
+  box-shadow: 0 12px 32px #0008;
+  overflow: hidden;
+}
+.journal-datepicker .react-datepicker__header {
+  border-bottom: 1px solid #ffffff10;
+  background: #122126;
+  padding-top: 0.75rem;
+}
+.journal-datepicker .react-datepicker__current-month,
+.journal-datepicker .react-datepicker-year-header,
+.journal-datepicker .react-datepicker__day-name {
+  color: #ececec;
+}
+.journal-datepicker .react-datepicker__day-name {
+  color: #83aaa2;
+  font-weight: 700;
+}
+.journal-datepicker .react-datepicker__day,
+.journal-datepicker .react-datepicker__month-text {
+  color: #d6dee0;
+  border-radius: 10px;
+}
+.journal-datepicker .react-datepicker__day:hover,
+.journal-datepicker .react-datepicker__month-text:hover {
+  background: #72e0b522;
+  border-radius: 10px;
+}
+.journal-datepicker .react-datepicker__day--outside-month {
+  color: #5f7470;
+}
+.journal-datepicker .react-datepicker__day--selected,
+.journal-datepicker .react-datepicker__day--keyboard-selected,
+.journal-datepicker .react-datepicker__month-text--selected,
+.journal-datepicker .react-datepicker__month-text--keyboard-selected {
+  background: #72e0b5;
+  color: #10201c;
+  font-weight: 800;
+}
+.journal-datepicker .react-datepicker__navigation-icon::before {
+  border-color: #72e0b5;
+}
+.react-datepicker-popper:has(.journal-datepicker) .react-datepicker__triangle {
+  display: none;
 }
 .visit-counter {
   display: flex;
@@ -615,6 +762,10 @@ button:disabled {
   }
   .country-list-entry > strong {
     font-size: 0.85rem;
+  }
+  .country-list-entry .country-flag {
+    width: 28px;
+    height: 21px;
   }
   .country-list-entry .delete-city {
     width: 36px;
