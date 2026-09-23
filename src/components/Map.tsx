@@ -57,7 +57,7 @@ function Map() {
   const navigate = useNavigate();
   const { search } = useLocation();
   const { cities, clearError, isLoading } = useCities();
-  const { countryCode: homeCountryCode } = useHomeCountry();
+  const { countryCode: homeCountryCode, plannedCountryCode } = useHomeCountry();
   const {
     getPosition: getPositionGeoLocation,
     isLoading: isLoadingGeoLocation,
@@ -150,7 +150,11 @@ function Map() {
           errorTileUrl="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgZmlsbD0iIzJkMzQzOSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjYWFhIiBmb250LXNpemU9IjE0Ij5NYXAgVGlsZSBVbmF2YWlsYWJsZTwvdGV4dD48L3N2Zz4="
         />
 
-        <CountryVisitOverlay cities={cities} homeCountryCode={homeCountryCode} />
+        <CountryVisitOverlay
+          cities={cities}
+          homeCountryCode={homeCountryCode}
+          plannedCountryCode={plannedCountryCode}
+        />
 
         {cities.map((city) => (
           <Marker

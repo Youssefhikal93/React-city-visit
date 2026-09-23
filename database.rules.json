@@ -33,6 +33,9 @@
           "homeCountry": {
             ".validate": "!newData.exists() || (newData.isString() && newData.val().matches(/^[a-z]{2}$/))"
           },
+          "plannedCountry": {
+            ".validate": "!newData.exists() || (newData.isString() && newData.val().matches(/^[a-z]{2}$/))"
+          },
           "$other": { ".validate": false }
         },
 

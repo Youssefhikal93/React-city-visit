@@ -9,19 +9,24 @@ import {
   type ReactNode,
 } from "react";
 
+import * as countryPreferencesApi from "../services/homeCountry";
 import { useAuth } from "./AuthContext";
-import * as homeCountryApi from "../services/homeCountry";
 
 interface HomeCountryState {
   username: string | null;
-  countryCode: string | null;
+  homeCountryCode: string | null;
+  plannedCountryCode: string | null;
   isLoading: boolean;
   loadError: string;
 }
 
 type HomeCountryAction =
   | { type: "loading"; username: string }
-  | { type: "loaded"; username: string; countryCode: string | null }
+  | {
+      type: "loaded";
+      username: string;
+      preferences: countryPreferencesApi.AccountCountryPreferences;
+    }
   | { type: "loadFailed"; username: string; error: string }
   | { type: "reset" };
 
@@ -30,10 +35,12 @@ interface HomeCountryChangeResult {
   error?: string;
 }
 
-interface HomeCountryContextValue
-  extends Omit<HomeCountryState, "username"> {
+interface HomeCountryContextValue extends Omit<HomeCountryState, "username"> {
+  countryCode: string | null;
   saveHomeCountry: (countryCode: string) => Promise<HomeCountryChangeResult>;
   clearHomeCountry: () => Promise<HomeCountryChangeResult>;
+  savePlannedCountry: (countryCode: string) => Promise<HomeCountryChangeResult>;
+  clearPlannedCountry: () => Promise<HomeCountryChangeResult>;
   retryHomeCountryLoad: () => void;
 }
 
@@ -43,7 +50,8 @@ const HomeCountryContext = createContext<HomeCountryContextValue | undefined>(
 
 const initialState: HomeCountryState = {
   username: null,
-  countryCode: null,
+  homeCountryCode: null,
+  plannedCountryCode: null,
   isLoading: false,
   loadError: "",
 };
@@ -56,35 +64,42 @@ function reducer(
     case "loading":
       return {
         username: action.username,
-        countryCode: null,
+        homeCountryCode: null,
+        plannedCountryCode: null,
         isLoading: true,
         loadError: "",
       };
     case "loaded":
       return {
         username: action.username,
-        countryCode: action.countryCode,
+        homeCountryCode: action.preferences.homeCountryCode,
+        plannedCountryCode: action.preferences.plannedCountryCode,
         isLoading: false,
         loadError: "",
       };
     case "loadFailed":
       return {
         username: action.username,
-        countryCode: null,
+        homeCountryCode: null,
+        plannedCountryCode: null,
         isLoading: false,
         loadError: action.error,
       };
     case "reset":
       return initialState;
     default:
-      throw new Error("Unknown home Country action");
+      throw new Error("Unknown Country preferences action");
   }
 }
 
 function readableError(error: unknown, fallback: string): string {
-  return error instanceof Error
-    ? error.message
-    : fallback;
+  return error instanceof Error ? error.message : fallback;
+}
+
+function countryPreferenceLabel(
+  preference: countryPreferencesApi.CountryPreference,
+): string {
+  return preference === "homeCountry" ? "home Country" : "planned Country";
 }
 
 function visibleState(
@@ -100,7 +115,8 @@ function HomeCountryProvider({ children }: { children: ReactNode }) {
   const username = user?.username ?? null;
   const [state, dispatch] = useReducer(reducer, initialState);
   const [retryVersion, setRetryVersion] = useState(0);
-  const { countryCode, isLoading, loadError } = visibleState(state, username);
+  const { homeCountryCode, plannedCountryCode, isLoading, loadError } =
+    visibleState(state, username);
 
   useEffect(() => {
     if (!username) {
@@ -110,19 +126,19 @@ function HomeCountryProvider({ children }: { children: ReactNode }) {
 
     let isCurrentSubscription = true;
     dispatch({ type: "loading", username });
-    const unsubscribe = homeCountryApi.subscribeToHomeCountry(
+    const unsubscribe = countryPreferencesApi.subscribeToCountryPreferences(
       username,
-      (loadedCountryCode) => {
+      (preferences) => {
         if (!isCurrentSubscription) return;
-        dispatch({ type: "loaded", username, countryCode: loadedCountryCode });
+        dispatch({ type: "loaded", username, preferences });
       },
       (error) => {
         if (!isCurrentSubscription) return;
-        console.error("Home Country subscription failed:", error);
+        console.error("Country preferences subscription failed:", error);
         dispatch({
           type: "loadFailed",
           username,
-          error: readableError(error, "Couldn't load your home Country."),
+          error: readableError(error, "Couldn't load your Country preferences."),
         });
       },
     );
@@ -132,61 +148,95 @@ function HomeCountryProvider({ children }: { children: ReactNode }) {
     };
   }, [retryVersion, username]);
 
+  const saveCountryPreference = useCallback(
+    async (
+      preference: countryPreferencesApi.CountryPreference,
+      countryCode: string,
+    ): Promise<HomeCountryChangeResult> => {
+      if (!username) return { success: false, error: "Not authenticated" };
+
+      try {
+        await countryPreferencesApi.saveCountryPreference(
+          username,
+          preference,
+          countryCode,
+        );
+        return { success: true };
+      } catch (error) {
+        const preferenceLabel = countryPreferenceLabel(preference);
+        console.error(`Failed to save ${preferenceLabel}:`, error);
+        return {
+          success: false,
+          error: readableError(error, `Couldn't save your ${preferenceLabel}.`),
+        };
+      }
+    },
+    [username],
+  );
+
+  const clearCountryPreference = useCallback(
+    async (
+      preference: countryPreferencesApi.CountryPreference,
+    ): Promise<HomeCountryChangeResult> => {
+      if (!username) return { success: false, error: "Not authenticated" };
+
+      try {
+        await countryPreferencesApi.clearCountryPreference(username, preference);
+        return { success: true };
+      } catch (error) {
+        const preferenceLabel = countryPreferenceLabel(preference);
+        console.error(`Failed to clear ${preferenceLabel}:`, error);
+        return {
+          success: false,
+          error: readableError(error, `Couldn't clear your ${preferenceLabel}.`),
+        };
+      }
+    },
+    [username],
+  );
+
   const saveHomeCountry = useCallback(
-    async (newCountryCode: string): Promise<HomeCountryChangeResult> => {
-      if (!username) return { success: false, error: "Not authenticated" };
-
-      try {
-        await homeCountryApi.saveHomeCountry(username, newCountryCode);
-        return { success: true };
-      } catch (error) {
-        console.error("Failed to save home Country:", error);
-        return {
-          success: false,
-          error: readableError(error, "Couldn't save your home Country."),
-        };
-      }
-    },
-    [username],
+    (countryCode: string) => saveCountryPreference("homeCountry", countryCode),
+    [saveCountryPreference],
   );
-
   const clearHomeCountry = useCallback(
-    async (): Promise<HomeCountryChangeResult> => {
-      if (!username) return { success: false, error: "Not authenticated" };
-
-      try {
-        await homeCountryApi.clearHomeCountry(username);
-        return { success: true };
-      } catch (error) {
-        console.error("Failed to clear home Country:", error);
-        return {
-          success: false,
-          error: readableError(error, "Couldn't clear your home Country."),
-        };
-      }
-    },
-    [username],
+    () => clearCountryPreference("homeCountry"),
+    [clearCountryPreference],
   );
-
+  const savePlannedCountry = useCallback(
+    (countryCode: string) => saveCountryPreference("plannedCountry", countryCode),
+    [saveCountryPreference],
+  );
+  const clearPlannedCountry = useCallback(
+    () => clearCountryPreference("plannedCountry"),
+    [clearCountryPreference],
+  );
   const retryHomeCountryLoad = useCallback(() => {
     if (username) setRetryVersion((version) => version + 1);
   }, [username]);
 
   const value = useMemo<HomeCountryContextValue>(
     () => ({
-      countryCode,
+      countryCode: homeCountryCode,
+      homeCountryCode,
+      plannedCountryCode,
       isLoading,
       loadError,
       saveHomeCountry,
       clearHomeCountry,
+      savePlannedCountry,
+      clearPlannedCountry,
       retryHomeCountryLoad,
     }),
     [
-      countryCode,
+      homeCountryCode,
+      plannedCountryCode,
       isLoading,
       loadError,
       saveHomeCountry,
       clearHomeCountry,
+      savePlannedCountry,
+      clearPlannedCountry,
       retryHomeCountryLoad,
     ],
   );

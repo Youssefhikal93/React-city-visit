@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider } from "../context/AuthContext";
 import { HomeCountryProvider } from "../context/HomeCountryContext";
 import HomeCountrySelector from "./HomeCountrySelector";
+import PlannedCountrySelector from "./PlannedCountrySelector";
 
 vi.hoisted(() => {
   process.env.VITE_FIREBASE_API_KEY = "test-api-key";
@@ -42,44 +43,84 @@ vi.mock("firebase/database", () => ({
   getDatabase: vi.fn(() => ({})),
 }));
 
+interface Preferences {
+  homeCountry?: string;
+  plannedCountry?: string;
+}
+
+type Preference = keyof Preferences;
+
+interface PreferenceCase {
+  preference: Preference;
+  label: string;
+  firstCountry: string;
+  replacementCountry: string;
+}
+
 interface Subscription {
   path: string;
   onError: (error: Error) => void;
-  onValue: (snapshot: { val: () => string | null }) => void;
+  onValue: (snapshot: { val: () => Preferences | null }) => void;
   active: boolean;
 }
 
+const preferenceCases: PreferenceCase[] = [
+  {
+    preference: "homeCountry",
+    label: "Home Country",
+    firstCountry: "se",
+    replacementCountry: "fr",
+  },
+  {
+    preference: "plannedCountry",
+    label: "Planned destination",
+    firstCountry: "is",
+    replacementCountry: "fr",
+  },
+];
 const accountForUid = { "uid-alice": "alice", "uid-bruno": "bruno" };
-const homeCountryValues = new Map<string, string>();
+const preferencesByAccount = new Map<string, Preferences>();
 let authStateListener:
   | ((user: { uid: string } | null) => void | Promise<void>)
   | null = null;
 let subscriptions: Subscription[] = [];
 
-function homeCountryPath(username: string): string {
-  return `users/${username}/settings/homeCountry`;
+function settingsPath(username: string): string {
+  return `users/${username}/settings`;
 }
 
-function snapshot(countryCode: string | undefined) {
-  return { val: () => countryCode ?? null };
+function usernameFromSettingsPath(path: string): string {
+  const match = /^users\/([^/]+)\/settings$/.exec(path);
+  if (!match) throw new Error(`Expected settings path, received ${path}.`);
+  return match[1];
 }
 
 function latestSubscription(username: string): Subscription {
   const subscription = [...subscriptions]
     .reverse()
-    .find((candidate) => candidate.path === homeCountryPath(username));
+    .find((candidate) => candidate.path === settingsPath(username));
   if (!subscription) throw new Error(`No subscription for ${username}.`);
   return subscription;
 }
 
-function emitHomeCountry(subscription: Subscription): void {
-  subscription.onValue(snapshot(homeCountryValues.get(subscription.path)));
+function selector(label: string): HTMLSelectElement {
+  return screen.getByRole("combobox", { name: label });
 }
 
-function notifyActiveSubscriptions(path: string): void {
+function emitPreferences(subscription: Subscription): void {
+  const username = usernameFromSettingsPath(subscription.path);
+  subscription.onValue({
+    val: () => preferencesByAccount.get(username) ?? null,
+  });
+}
+
+function notifyActiveSubscriptions(username: string): void {
   subscriptions
-    .filter((subscription) => subscription.active && subscription.path === path)
-    .forEach(emitHomeCountry);
+    .filter(
+      (subscription) =>
+        subscription.active && subscription.path === settingsPath(username),
+    )
+    .forEach(emitPreferences);
 }
 
 async function signInAs(uid: keyof typeof accountForUid): Promise<void> {
@@ -88,11 +129,12 @@ async function signInAs(uid: keyof typeof accountForUid): Promise<void> {
   });
 }
 
-async function renderHomeCountrySelector() {
+async function renderCountrySelectors() {
   const user = userEvent.setup();
   const rendered = render(
     <AuthProvider>
       <HomeCountryProvider>
+        <PlannedCountrySelector />
         <HomeCountrySelector />
       </HomeCountryProvider>
     </AuthProvider>,
@@ -101,15 +143,15 @@ async function renderHomeCountrySelector() {
   return { user, ...rendered };
 }
 
-async function loadHomeCountry(username: string): Promise<void> {
-  await act(async () => emitHomeCountry(latestSubscription(username)));
+async function loadPreferences(username: string): Promise<void> {
+  await act(async () => emitPreferences(latestSubscription(username)));
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
   authStateListener = null;
   subscriptions = [];
-  homeCountryValues.clear();
+  preferencesByAccount.clear();
 
   firebase.onAuthStateChanged.mockImplementation((_auth, listener) => {
     authStateListener = listener;
@@ -144,111 +186,123 @@ beforeEach(() => {
   );
   firebase.database.set.mockImplementation(
     async ({ path }: { path: string }, countryCode: string) => {
-      homeCountryValues.set(path, countryCode);
-      notifyActiveSubscriptions(path);
+      const match = /^users\/([^/]+)\/settings\/(homeCountry|plannedCountry)$/.exec(path);
+      if (!match) throw new Error(`Expected Country preference path, received ${path}.`);
+      const [, username, preference] = match;
+      preferencesByAccount.set(username, {
+        ...preferencesByAccount.get(username),
+        [preference as Preference]: countryCode,
+      });
+      notifyActiveSubscriptions(username);
     },
   );
   firebase.database.remove.mockImplementation(async ({ path }: { path: string }) => {
-    homeCountryValues.delete(path);
-    notifyActiveSubscriptions(path);
+    const match = /^users\/([^/]+)\/settings\/(homeCountry|plannedCountry)$/.exec(path);
+    if (!match) throw new Error(`Expected Country preference path, received ${path}.`);
+    const [, username, preference] = match;
+    const preferences = { ...preferencesByAccount.get(username) };
+    delete preferences[preference as Preference];
+    preferencesByAccount.set(username, preferences);
+    notifyActiveSubscriptions(username);
   });
 });
 
-describe("HomeCountryProvider and selector", () => {
-  it("saves, reloads, replaces, and clears the private Country selection", async () => {
-    const firstPage = await renderHomeCountrySelector();
-    await signInAs("uid-alice");
-    await waitFor(() => expect(latestSubscription("alice")).toBeDefined());
-    await loadHomeCountry("alice");
+describe("Account Country preference selectors", () => {
+  it.each(preferenceCases)(
+    "saves, reloads, replaces, and clears $label",
+    async ({ preference, label, firstCountry, replacementCountry }) => {
+      const firstPage = await renderCountrySelectors();
+      await signInAs("uid-alice");
+      await waitFor(() => expect(latestSubscription("alice")).toBeDefined());
+      await loadPreferences("alice");
 
-    const countrySelector = screen.getByRole("combobox", {
-      name: "Home Country",
+      await firstPage.user.selectOptions(selector(label), firstCountry);
+      await waitFor(() => expect(selector(label)).toHaveValue(firstCountry));
+
+      firstPage.unmount();
+      const reloadedPage = await renderCountrySelectors();
+      await signInAs("uid-alice");
+      await waitFor(() => expect(subscriptions).toHaveLength(2));
+      await loadPreferences("alice");
+      expect(selector(label)).toHaveValue(firstCountry);
+
+      await reloadedPage.user.selectOptions(selector(label), replacementCountry);
+      await waitFor(() => expect(selector(label)).toHaveValue(replacementCountry));
+      await reloadedPage.user.click(
+        screen.getByRole("button", { name: new RegExp(`Clear ${label}`, "i") }),
+      );
+      await waitFor(() => expect(selector(label)).toHaveValue(""));
+      expect(preferencesByAccount.get("alice")?.[preference]).toBeUndefined();
+    },
+  );
+
+  it.each(preferenceCases)(
+    "restores $label and explains a failed save",
+    async ({ preference, label, firstCountry, replacementCountry }) => {
+      const { user } = await renderCountrySelectors();
+      preferencesByAccount.set("alice", { [preference]: firstCountry });
+      await signInAs("uid-alice");
+      await loadPreferences("alice");
+      firebase.database.set.mockRejectedValueOnce(new Error("Write denied."));
+
+      await user.selectOptions(selector(label), replacementCountry);
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("Write denied.");
+      expect(selector(label)).toHaveValue(firstCountry);
+    },
+  );
+
+  it("does not expose either preference while a different Account loads", async () => {
+    await renderCountrySelectors();
+    preferencesByAccount.set("alice", {
+      homeCountry: "se",
+      plannedCountry: "fr",
     });
-    await firstPage.user.selectOptions(countrySelector, "se");
-    await waitFor(() => expect(countrySelector).toHaveValue("se"));
-
-    firstPage.unmount();
-    const reloadedPage = await renderHomeCountrySelector();
     await signInAs("uid-alice");
-    await waitFor(() => expect(subscriptions).toHaveLength(2));
-    await loadHomeCountry("alice");
-    const reloadedSelector = screen.getByRole("combobox", {
-      name: "Home Country",
-    });
-    expect(reloadedSelector).toHaveValue("se");
-
-    await reloadedPage.user.selectOptions(reloadedSelector, "fr");
-    await waitFor(() => expect(reloadedSelector).toHaveValue("fr"));
-    await reloadedPage.user.click(
-      screen.getByRole("button", { name: /Clear home Country/ }),
-    );
-    await waitFor(() => expect(reloadedSelector).toHaveValue(""));
-    expect(homeCountryValues.has(homeCountryPath("alice"))).toBe(false);
-  });
-
-  it("restores the saved Country and explains a failed save", async () => {
-    const { user } = await renderHomeCountrySelector();
-    homeCountryValues.set(homeCountryPath("alice"), "se");
-    await signInAs("uid-alice");
-    await loadHomeCountry("alice");
-    firebase.database.set.mockRejectedValueOnce(new Error("Write denied."));
-
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Home Country" }),
-      "fr",
-    );
-
-    expect(await screen.findByRole("alert")).toHaveTextContent("Write denied.");
-    expect(screen.getByRole("combobox", { name: "Home Country" })).toHaveValue(
-      "se",
-    );
-  });
-
-  it("hides an obsolete Country until the next Account's delayed load arrives", async () => {
-    await renderHomeCountrySelector();
-    homeCountryValues.set(homeCountryPath("alice"), "se");
-    await signInAs("uid-alice");
-    await waitFor(() => expect(latestSubscription("alice")).toBeDefined());
-    await loadHomeCountry("alice");
+    await loadPreferences("alice");
     const aliceSubscription = latestSubscription("alice");
-    expect(screen.getByRole("combobox", { name: "Home Country" })).toHaveValue(
-      "se",
-    );
+    expect(selector("Home Country")).toHaveValue("se");
+    expect(selector("Planned destination")).toHaveValue("fr");
 
     await signInAs("uid-bruno");
-    const countrySelector = screen.getByRole("combobox", {
-      name: "Home Country",
-    });
-    expect(countrySelector).toHaveValue("");
-    expect(countrySelector).toBeDisabled();
+    expect(selector("Home Country")).toHaveValue("");
+    expect(selector("Planned destination")).toHaveValue("");
+    expect(selector("Planned destination")).toBeDisabled();
 
-    await act(async () => emitHomeCountry(aliceSubscription));
-    expect(countrySelector).toHaveValue("");
+    await act(async () => emitPreferences(aliceSubscription));
+    expect(selector("Home Country")).toHaveValue("");
+    expect(selector("Planned destination")).toHaveValue("");
 
-    homeCountryValues.set(homeCountryPath("bruno"), "no");
-    await loadHomeCountry("bruno");
-    expect(countrySelector).toHaveValue("no");
+    preferencesByAccount.set("bruno", { homeCountry: "no", plannedCountry: "is" });
+    await loadPreferences("bruno");
+    expect(selector("Home Country")).toHaveValue("no");
+    expect(selector("Planned destination")).toHaveValue("is");
   });
 
-  it("shows a failed load and starts a new subscription when retried", async () => {
-    const { user } = await renderHomeCountrySelector();
+  it("shows a failed preference load and retries the subscription", async () => {
+    const { user } = await renderCountrySelectors();
     await signInAs("uid-alice");
     await waitFor(() => expect(latestSubscription("alice")).toBeDefined());
     const failedSubscription = latestSubscription("alice");
 
     await act(async () => failedSubscription.onError(new Error("Read denied.")));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Read denied.");
+    const loadErrorAlerts = await screen.findAllByRole("alert");
+    expect(loadErrorAlerts).toHaveLength(2);
+    loadErrorAlerts.forEach((alert) =>
+      expect(alert).toHaveTextContent("Read denied."),
+    );
     await user.click(
-      screen.getByRole("button", { name: "Try loading home Country again" }),
+      screen.getAllByRole("button", {
+        name: "Try loading Country preferences again",
+      })[0],
     );
     await waitFor(() => expect(subscriptions).toHaveLength(2));
-    homeCountryValues.set(homeCountryPath("alice"), "fr");
-    await loadHomeCountry("alice");
+    preferencesByAccount.set("alice", { homeCountry: "fr", plannedCountry: "no" });
+    await loadPreferences("alice");
 
     expect(screen.queryByText("Read denied.")).not.toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Home Country" })).toHaveValue(
-      "fr",
-    );
+    expect(selector("Home Country")).toHaveValue("fr");
+    expect(selector("Planned destination")).toHaveValue("no");
   });
 });

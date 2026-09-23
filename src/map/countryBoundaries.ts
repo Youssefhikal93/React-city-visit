@@ -37,7 +37,7 @@ export function countryCodeForCity(city: Pick<City, "emoji">): string | null {
 
 export function visitedCountryBoundaries(
   cities: City[],
-  excludedCountryCode: string | null = null,
+  excludedCountryCodes = new Set<string>(),
 ): CountryBoundaryCollection {
   const visitedCountryCodes = new Set(
     cities.flatMap((city) => {
@@ -49,13 +49,13 @@ export function visitedCountryBoundaries(
   return {
     type: "FeatureCollection",
     features: allCountryBoundaries.features.filter((country) =>
-      country.properties.countryCode !== excludedCountryCode &&
+      !excludedCountryCodes.has(country.properties.countryCode) &&
       visitedCountryCodes.has(country.properties.countryCode),
     ),
   };
 }
 
-export function homeCountryBoundaries(
+export function countryPreferenceBoundaries(
   countryCode: string | null,
 ): CountryBoundaryCollection {
   return {

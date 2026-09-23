@@ -4,42 +4,67 @@ import { db } from "./firebase";
 
 const COUNTRY_CODE_PATTERN = /^[a-z]{2}$/;
 
-function homeCountryRef(username: string) {
-  return ref(db, `users/${username}/settings/homeCountry`);
+export type CountryPreference = "homeCountry" | "plannedCountry";
+
+export interface AccountCountryPreferences {
+  homeCountryCode: string | null;
+  plannedCountryCode: string | null;
 }
 
-export function isCountryCode(countryCode: string): boolean {
+function settingsRef(username: string) {
+  return ref(db, `users/${username}/settings`);
+}
+
+function countryPreferenceRef(username: string, preference: CountryPreference) {
+  return ref(db, `users/${username}/settings/${preference}`);
+}
+
+function isCountryCode(countryCode: string): boolean {
   return COUNTRY_CODE_PATTERN.test(countryCode);
 }
 
-/** Subscribes to the Account's private home Country setting. */
-export function subscribeToHomeCountry(
+function countryCodeFromSettings(
+  settings: unknown,
+  preference: CountryPreference,
+): string | null {
+  if (typeof settings !== "object" || settings === null) return null;
+  const countryCode = (settings as Record<string, unknown>)[preference];
+  return typeof countryCode === "string" && isCountryCode(countryCode)
+    ? countryCode
+    : null;
+}
+
+/** Subscribes to the Account's private Country preferences. */
+export function subscribeToCountryPreferences(
   username: string,
-  onHomeCountry: (countryCode: string | null) => void,
+  onPreferences: (preferences: AccountCountryPreferences) => void,
   onError: (error: Error) => void,
 ): Unsubscribe {
   return onValue(
-    homeCountryRef(username),
+    settingsRef(username),
     (snapshot) => {
-      const countryCode = snapshot.val();
-      onHomeCountry(
-        typeof countryCode === "string" && isCountryCode(countryCode)
-          ? countryCode
-          : null,
-      );
+      const settings = snapshot.val();
+      onPreferences({
+        homeCountryCode: countryCodeFromSettings(settings, "homeCountry"),
+        plannedCountryCode: countryCodeFromSettings(settings, "plannedCountry"),
+      });
     },
     onError,
   );
 }
 
-export async function saveHomeCountry(
+export async function saveCountryPreference(
   username: string,
+  preference: CountryPreference,
   countryCode: string,
 ): Promise<void> {
   if (!isCountryCode(countryCode)) throw new Error("Choose a valid Country.");
-  await set(homeCountryRef(username), countryCode);
+  await set(countryPreferenceRef(username, preference), countryCode);
 }
 
-export async function clearHomeCountry(username: string): Promise<void> {
-  await remove(homeCountryRef(username));
+export async function clearCountryPreference(
+  username: string,
+  preference: CountryPreference,
+): Promise<void> {
+  await remove(countryPreferenceRef(username, preference));
 }

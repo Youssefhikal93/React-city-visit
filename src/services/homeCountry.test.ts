@@ -17,36 +17,41 @@ vi.mock("firebase/database", () => ({
 }));
 
 import {
-  clearHomeCountry,
-  saveHomeCountry,
-  subscribeToHomeCountry,
+  clearCountryPreference,
+  saveCountryPreference,
+  subscribeToCountryPreferences,
 } from "./homeCountry";
 
-describe("home Country persistence", () => {
+describe("Account Country preference persistence", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     firebase.database.ref.mockImplementation((_database, path: string) => ({ path }));
   });
 
-  it("loads a saved Country after reload", () => {
-    const onHomeCountry = vi.fn();
+  it("loads known settings and ignores unknown or malformed legacy values", () => {
+    const onPreferences = vi.fn();
     firebase.database.onValue.mockImplementation((_reference, listener) => {
-      listener({ val: () => "se" });
+      listener({
+        val: () => ({ homeCountry: "se", plannedCountry: "France", future: "us" }),
+      });
       return () => undefined;
     });
 
-    subscribeToHomeCountry("tester", onHomeCountry, vi.fn());
+    subscribeToCountryPreferences("tester", onPreferences, vi.fn());
 
-    expect(onHomeCountry).toHaveBeenCalledWith("se");
+    expect(onPreferences).toHaveBeenCalledWith({
+      homeCountryCode: "se",
+      plannedCountryCode: null,
+    });
   });
 
-  it("writes a replacement Country and clears only that Account's setting", async () => {
-    await saveHomeCountry("tester", "fr");
-    await saveHomeCountry("traveler", "no");
-    await clearHomeCountry("tester");
+  it("writes and clears only the selected Account preference", async () => {
+    await saveCountryPreference("tester", "plannedCountry", "fr");
+    await saveCountryPreference("traveler", "homeCountry", "no");
+    await clearCountryPreference("tester", "plannedCountry");
 
     expect(firebase.database.set).toHaveBeenCalledWith(
-      { path: "users/tester/settings/homeCountry" },
+      { path: "users/tester/settings/plannedCountry" },
       "fr",
     );
     expect(firebase.database.set).toHaveBeenCalledWith(
@@ -54,7 +59,7 @@ describe("home Country persistence", () => {
       "no",
     );
     expect(firebase.database.remove).toHaveBeenCalledWith({
-      path: "users/tester/settings/homeCountry",
+      path: "users/tester/settings/plannedCountry",
     });
   });
 });

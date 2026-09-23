@@ -1,7 +1,7 @@
 import { GeoJSON } from "react-leaflet";
 
 import {
-  homeCountryBoundaries,
+  countryPreferenceBoundaries,
   visitedCountryBoundaries,
 } from "./countryBoundaries";
 import type { City } from "../types";
@@ -22,11 +22,23 @@ const homeCountryStyle = {
   weight: 1.5,
 };
 
-function boundaryKey(cities: City[], homeCountryCode: string | null): string {
+const plannedCountryStyle = {
+  color: "#6d28d9",
+  fillColor: "#a78bfa",
+  fillOpacity: 0.62,
+  opacity: 0.95,
+  weight: 1.5,
+};
+
+function boundaryKey(
+  cities: City[],
+  homeCountryCode: string | null,
+  plannedCountryCode: string | null,
+): string {
   return cities
     .map((city) => `${city.id}:${city.emoji}`)
     .sort()
-    .concat(homeCountryCode ?? "")
+    .concat(homeCountryCode ?? "", plannedCountryCode ?? "")
     .join("|");
 }
 
@@ -38,23 +50,39 @@ function boundaryKey(cities: City[], homeCountryCode: string | null): string {
 export function CountryVisitOverlay({
   cities,
   homeCountryCode,
+  plannedCountryCode,
 }: {
   cities: City[];
   homeCountryCode: string | null;
+  plannedCountryCode: string | null;
 }) {
+  const excludedCountryCodes = new Set(
+    [homeCountryCode, plannedCountryCode].filter(
+      (countryCode): countryCode is string => countryCode !== null,
+    ),
+  );
+
   return (
     <>
       <GeoJSON
-        data={visitedCountryBoundaries(cities, homeCountryCode)}
+        data={visitedCountryBoundaries(cities, excludedCountryCodes)}
         interactive={false}
-        key={`visited-${boundaryKey(cities, homeCountryCode)}`}
+        key={`visited-${boundaryKey(cities, homeCountryCode, plannedCountryCode)}`}
         style={visitedCountryStyle}
       />
       <GeoJSON
-        data={homeCountryBoundaries(homeCountryCode)}
+        data={countryPreferenceBoundaries(
+          plannedCountryCode === homeCountryCode ? null : homeCountryCode,
+        )}
         interactive={false}
-        key={`home-${homeCountryCode ?? "none"}`}
+        key={`home-${plannedCountryCode === homeCountryCode ? "none" : (homeCountryCode ?? "none")}`}
         style={homeCountryStyle}
+      />
+      <GeoJSON
+        data={countryPreferenceBoundaries(plannedCountryCode)}
+        interactive={false}
+        key={`planned-${plannedCountryCode ?? "none"}`}
+        style={plannedCountryStyle}
       />
     </>
   );
@@ -79,6 +107,13 @@ export function CountryVisitLegend() {
           className="h-3 w-3 rounded-sm border border-[#d97706] bg-[#fbbf24]/60"
         />
         Home Country
+      </span>
+      <span className="mt-1 flex items-center gap-2">
+        <span
+          aria-hidden="true"
+          className="h-3 w-3 rounded-sm border border-[#6d28d9] bg-[#a78bfa]/60"
+        />
+        Planned destination
       </span>
     </aside>
   );

@@ -59,20 +59,34 @@ type CitiesApiMock = {
 };
 
 type HomeCountryApiMock = {
-  subscribeToHomeCountry: ReturnType<
+  subscribeToCountryPreferences: ReturnType<
     typeof vi.fn<
       (
         username: string,
-        onHomeCountry: (countryCode: string | null) => void,
+        onPreferences: (preferences: {
+          homeCountryCode: string | null;
+          plannedCountryCode: string | null;
+        }) => void,
         onError: (error: Error) => void,
       ) => Unsubscribe
     >
   >;
-  saveHomeCountry: ReturnType<
-    typeof vi.fn<(username: string, countryCode: string) => Promise<void>>
+  saveCountryPreference: ReturnType<
+    typeof vi.fn<
+      (
+        username: string,
+        preference: "homeCountry" | "plannedCountry",
+        countryCode: string,
+      ) => Promise<void>
+    >
   >;
-  clearHomeCountry: ReturnType<
-    typeof vi.fn<(username: string) => Promise<void>>
+  clearCountryPreference: ReturnType<
+    typeof vi.fn<
+      (
+        username: string,
+        preference: "homeCountry" | "plannedCountry",
+      ) => Promise<void>
+    >
   >;
 };
 
@@ -87,9 +101,9 @@ const citiesApi = vi.hoisted<CitiesApiMock>(() => ({
 }));
 
 const homeCountryApi = vi.hoisted<HomeCountryApiMock>(() => ({
-  subscribeToHomeCountry: vi.fn(),
-  saveHomeCountry: vi.fn(),
-  clearHomeCountry: vi.fn(),
+  subscribeToCountryPreferences: vi.fn(),
+  saveCountryPreference: vi.fn(),
+  clearCountryPreference: vi.fn(),
 }));
 
 vi.mock("../services/cities", () => citiesApi);
@@ -119,6 +133,10 @@ vi.mock("../components/Map", async () => {
 
 export interface RenderAppOptions {
   cities?: City[];
+  countryPreferences?: {
+    homeCountryCode: string | null;
+    plannedCountryCode: string | null;
+  };
   route?: string;
   viewport?: "phone" | "wide";
 }
@@ -179,25 +197,29 @@ function configureFakeCitiesService(fakeCitiesService: FakeCitiesService) {
   citiesApi.deleteMemory.mockImplementation(fakeCitiesService.deleteMemory);
 }
 
-function configureFakeHomeCountryService() {
-  homeCountryApi.subscribeToHomeCountry.mockImplementation(
-    (_username, onHomeCountry) => {
-      onHomeCountry(null);
+function configureFakeHomeCountryService(countryPreferences: {
+  homeCountryCode: string | null;
+  plannedCountryCode: string | null;
+}) {
+  homeCountryApi.subscribeToCountryPreferences.mockImplementation(
+    (_username, onPreferences) => {
+      onPreferences(countryPreferences);
       return () => undefined;
     },
   );
-  homeCountryApi.saveHomeCountry.mockResolvedValue(undefined);
-  homeCountryApi.clearHomeCountry.mockResolvedValue(undefined);
+  homeCountryApi.saveCountryPreference.mockResolvedValue(undefined);
+  homeCountryApi.clearCountryPreference.mockResolvedValue(undefined);
 }
 
 export function renderApp({
   cities = [],
+  countryPreferences = { homeCountryCode: null, plannedCountryCode: null },
   route = "/app/cities",
   viewport = "wide",
 }: RenderAppOptions = {}) {
   installMatchMedia(viewport);
   configureFakeCitiesService(createFakeCitiesService(cities));
-  configureFakeHomeCountryService();
+  configureFakeHomeCountryService(countryPreferences);
 
   return {
     user: userEvent.setup(),

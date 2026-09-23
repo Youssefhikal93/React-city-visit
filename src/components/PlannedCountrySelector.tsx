@@ -1,25 +1,25 @@
 import { useHomeCountry } from "../context/HomeCountryContext";
 import CountryPreferenceSelector from "./CountryPreferenceSelector";
 
-export default function HomeCountrySelector() {
+export default function PlannedCountrySelector() {
   const {
-    countryCode,
+    plannedCountryCode,
     isLoading,
     loadError,
-    saveHomeCountry,
-    clearHomeCountry,
+    savePlannedCountry,
+    clearPlannedCountry,
     retryHomeCountryLoad,
   } = useHomeCountry();
 
   return (
     <CountryPreferenceSelector
-      clearCountry={clearHomeCountry}
-      countryCode={countryCode}
+      clearCountry={clearPlannedCountry}
+      countryCode={plannedCountryCode}
       isLoading={isLoading}
-      label="Home Country"
+      label="Planned destination"
       loadError={loadError}
       retryLoad={retryHomeCountryLoad}
-      saveCountry={saveHomeCountry}
+      saveCountry={savePlannedCountry}
     />
   );
 }
