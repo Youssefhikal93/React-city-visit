@@ -86,6 +86,7 @@ export default function CountryPreferenceSelector({
       </label>
       <select
         className="mt-2 min-h-11 w-full rounded-lg border border-dark-2 bg-dark-0 px-3 text-sm text-light-1 focus:outline-none focus:ring-2 focus:ring-brand-2 disabled:opacity-60"
+        data-country-preference
         disabled={isLoading || isSaving || Boolean(loadError)}
         id={identifier}
         onChange={(event) => void saveSelectedCountry(event.target.value)}

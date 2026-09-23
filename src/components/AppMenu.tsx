@@ -13,8 +13,6 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 import { useCities } from "../context/CitiesContext";
-import HomeCountrySelector from "./HomeCountrySelector";
-import PlannedCountrySelector from "./PlannedCountrySelector";
 
 const itemClassName =
   "flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold text-light-1 transition-colors hover:bg-dark-2 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-2";
@@ -97,13 +95,6 @@ function AppMenu() {
                 {countryCount} {countryCount === 1 ? "Country" : "Countries"}
               </p>
             </div>
-          )}
-
-          {user && (
-            <>
-              <PlannedCountrySelector />
-              <HomeCountrySelector />
-            </>
           )}
 
           <ul className="list-none space-y-1 py-2">
