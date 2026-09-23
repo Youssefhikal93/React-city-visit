@@ -65,21 +65,16 @@ function VisitDateEditor({ city, onCancel, onSaved }: VisitDateEditorProps) {
   }
 
   return (
-    <form
-      className="rounded-xl border border-brand-2/40 bg-dark-2/40 p-4 sm:p-5"
-      onSubmit={saveVisitDate}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-xs font-extrabold uppercase tracking-wider text-light-1 sm:text-sm">
-            Edit visit date
-          </h2>
-          <p className="mt-1 text-sm text-light-1/80">
+    <form className="visit-date-editor" onSubmit={saveVisitDate}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="eyebrow">EDIT VISIT DATE</h2>
+          <p className="mt-1 text-sm text-[#a0b5b1]">
             Choose how precisely you remember this visit.
           </p>
         </div>
         <button
-          className="min-h-11 rounded-lg px-3 text-sm font-semibold text-light-2 hover:bg-dark-1 focus:outline-none focus:ring-2 focus:ring-brand-2"
+          className="visit-date-cancel"
           disabled={isSaving}
           onClick={onCancel}
           type="button"
@@ -88,38 +83,34 @@ function VisitDateEditor({ city, onCancel, onSaved }: VisitDateEditorProps) {
         </button>
       </div>
 
-      <fieldset className="mt-4 flex flex-col gap-2 text-sm text-light-1 sm:flex-row sm:gap-4">
+      <fieldset className="visit-date-precision">
         <legend className="sr-only">Visit date precision</legend>
-        <label className="flex items-center gap-2">
-          <input
-            checked={datePrecision === "day"}
-            disabled={isSaving}
-            name="visitDatePrecision"
-            onChange={() => changePrecision("day")}
-            type="radio"
-          />
-          Day, month and year
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            checked={datePrecision === "month"}
-            disabled={isSaving}
-            name="visitDatePrecision"
-            onChange={() => changePrecision("month")}
-            type="radio"
-          />
-          Month and year
-        </label>
+        {(
+          [
+            ["day", "Day, month and year"],
+            ["month", "Month and year"],
+          ] as const
+        ).map(([precision, label]) => (
+          <label key={precision}>
+            <input
+              checked={datePrecision === precision}
+              className="sr-only"
+              disabled={isSaving}
+              name="visitDatePrecision"
+              onChange={() => changePrecision(precision)}
+              type="radio"
+            />
+            <span>{label}</span>
+          </label>
+        ))}
       </fieldset>
 
-      <label
-        className="mt-4 block text-sm font-semibold text-light-1"
-        htmlFor="visit-date"
-      >
+      <label className="visit-date-label" htmlFor="visit-date">
         Visit date
       </label>
       <DatePicker
-        className="mt-2 min-h-11 w-full rounded-lg border-none bg-light-2 p-2 text-base text-dark-0 focus:outline-none focus:ring-2 focus:ring-brand-2"
+        calendarClassName="journal-datepicker"
+        className="visit-date-input"
         dateFormat={datePrecision === "month" ? "MM/yyyy" : "dd/MM/yyyy"}
         disabled={isSaving}
         id="visit-date"
@@ -137,11 +128,7 @@ function VisitDateEditor({ city, onCancel, onSaved }: VisitDateEditorProps) {
         </p>
       )}
 
-      <button
-        className="mt-4 min-h-11 w-full rounded-xl bg-brand-2 px-5 py-3 text-sm font-bold uppercase text-dark-1 transition-colors hover:bg-brand-1 focus:outline-none focus:ring-2 focus:ring-brand-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-        disabled={isSaving}
-        type="submit"
-      >
+      <button className="visit-date-save" disabled={isSaving} type="submit">
         {isSaving ? "Saving..." : "Save visit date"}
       </button>
     </form>
