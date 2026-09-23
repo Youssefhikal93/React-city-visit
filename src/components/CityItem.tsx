@@ -9,10 +9,8 @@ import VisitCounter from "./VisitCounter";
 
 function CityItem({ city }: { city: City }) {
   const { currentCity, deleteCity } = useCities();
-  const { livedInCountryCodes, plannedCountryCodes } = useCountryLists();
-  const countryCode = city.emoji.toLowerCase();
-  const isLivedIn = livedInCountryCodes.includes(countryCode);
-  const isPlanned = plannedCountryCodes.includes(countryCode);
+  const { plannedCountryCodes } = useCountryLists();
+  const isPlanned = plannedCountryCodes.includes(city.emoji.toLowerCase());
   return (
     <li
       className={
@@ -31,18 +29,11 @@ function CityItem({ city }: { city: City }) {
         <div>
           <h3>{city.cityName}</h3>
           <p>{city.country}</p>
-          {(isLivedIn || isPlanned) && (
+          {isPlanned && (
             <div className="mt-2 flex flex-wrap gap-1" aria-label="Country status">
-              {isLivedIn && (
-                <span className="rounded-full border border-[#d97706] bg-[#fbbf24]/20 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-[#fbbf24]">
-                  Lived in
-                </span>
-              )}
-              {isPlanned && (
-                <span className="rounded-full border border-[#6d28d9] bg-[#a78bfa]/20 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-[#c4b5fd]">
-                  Planned
-                </span>
-              )}
+              <span className="rounded-full border border-[#6d28d9] bg-[#a78bfa]/20 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-[#c4b5fd]">
+                Planned
+              </span>
             </div>
           )}
           {city.date && (
