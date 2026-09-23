@@ -1,5 +1,12 @@
 import VisitCounter from "./VisitCounter";
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type RefObject,
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { useCities } from "../context/CitiesContext";
@@ -7,6 +14,7 @@ import { mapCityTarget } from "../map/mapBehaviour";
 import type { Memory } from "../types";
 import { formatVisitDate } from "../services/visitDate";
 import { fitWithinLongSide } from "./memoryDimensions";
+import PhotoSourceSheet from "./PhotoSourceSheet";
 import Spinner from "./Spinner";
 
 const MAX_MEMORIES = 5;
@@ -66,9 +74,13 @@ function convertToBase64(blob: Blob): Promise<string> {
 
 function City() {
   const [isAddingMemory, setIsAddingMemory] = useState(false);
+  const [isPhotoSourceSheetOpen, setIsPhotoSourceSheetOpen] = useState(false);
   const [memoryError, setMemoryError] = useState("");
   const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const addMemoryButtonRef = useRef<HTMLButtonElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const isAddingMemoryRef = useRef(false);
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentCity, getCity, isLoading, addMemory, deleteMemory } = useCities();
@@ -99,21 +111,56 @@ function City() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedMemory]);
 
+  const returnFocusToAddMemory = useCallback(() => {
+    requestAnimationFrame(() => addMemoryButtonRef.current?.focus());
+  }, []);
+
+  useEffect(() => {
+    const inputs = [galleryInputRef.current, cameraInputRef.current];
+    inputs.forEach((input) =>
+      input?.addEventListener("cancel", returnFocusToAddMemory)
+    );
+    return () =>
+      inputs.forEach((input) =>
+        input?.removeEventListener("cancel", returnFocusToAddMemory)
+      );
+  }, [currentCity, returnFocusToAddMemory]);
+
+  function openPhotoSourceSheet() {
+    setIsPhotoSourceSheetOpen(true);
+  }
+
+  function closePhotoSourceSheet() {
+    setIsPhotoSourceSheetOpen(false);
+    returnFocusToAddMemory();
+  }
+
+  function choosePhotoSource(inputRef: RefObject<HTMLInputElement | null>) {
+    setIsPhotoSourceSheetOpen(false);
+    inputRef.current?.click();
+  }
+
   async function uploadMemory(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file || !id || isAddingMemory) return;
+    if (!file || !id || cannotAddMemory || isAddingMemoryRef.current) {
+      returnFocusToAddMemory();
+      return;
+    }
 
     setMemoryError("");
     if (!file.type.startsWith("image/")) {
       setMemoryError("Choose an image file for this Memory.");
+      returnFocusToAddMemory();
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
       setMemoryError("That Memory must be 10MB or smaller.");
+      returnFocusToAddMemory();
       return;
     }
 
+    isAddingMemoryRef.current = true;
     setIsAddingMemory(true);
     try {
       const optimizedMemory = await resizeImage(file);
@@ -122,7 +169,9 @@ function City() {
       console.error("Error adding Memory:", error);
       setMemoryError("Couldn't add that Memory. Please try again.");
     } finally {
+      isAddingMemoryRef.current = false;
       setIsAddingMemory(false);
+      returnFocusToAddMemory();
     }
   }
 
@@ -246,7 +295,8 @@ function City() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                ref={addMemoryButtonRef}
+                onClick={openPhotoSourceSheet}
                 disabled={isAddingMemory || cannotAddMemory}
                 className="min-h-11 rounded-xl bg-gradient-to-r from-brand-2 to-brand-1 px-6 py-3 text-sm font-bold uppercase text-dark-0 transition-all hover:from-brand-1 hover:to-brand-2 focus:outline-none focus:ring-2 focus:ring-brand-2 disabled:cursor-not-allowed disabled:opacity-50 sm:text-base"
               >
@@ -270,11 +320,21 @@ function City() {
             )}
             <input
               type="file"
-              ref={fileInputRef}
+              ref={galleryInputRef}
               accept="image/*"
               onChange={uploadMemory}
               disabled={isAddingMemory || cannotAddMemory}
-              aria-label="Add a Memory"
+              aria-label="Choose a Memory from Gallery"
+              className="hidden"
+            />
+            <input
+              type="file"
+              ref={cameraInputRef}
+              accept="image/*"
+              capture="environment"
+              onChange={uploadMemory}
+              disabled={isAddingMemory || cannotAddMemory}
+              aria-label="Take a Memory with Camera"
               className="hidden"
             />
           </section>
@@ -329,6 +389,15 @@ function City() {
             </button>
           </div>
         </div>
+      )}
+
+      {isPhotoSourceSheetOpen && (
+        <PhotoSourceSheet
+          disabled={isAddingMemory || cannotAddMemory}
+          onChooseGallery={() => choosePhotoSource(galleryInputRef)}
+          onChooseCamera={() => choosePhotoSource(cameraInputRef)}
+          onDismiss={closePhotoSourceSheet}
+        />
       )}
     </article>
   );

@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { aCity, createFakeCitiesService } from "./fakeCitiesService";
@@ -21,6 +21,32 @@ function renderCity(memories = [firstMemory], legacyImage?: string) {
   });
 }
 
+function mockImageResize() {
+  vi.stubGlobal(
+    "Image",
+    class {
+      width = 1600;
+      height = 1200;
+      onload: ((event: Event) => void) | null = null;
+      onerror: ((event: Event) => void) | null = null;
+
+      set src(_value: string) {
+        this.onload?.(new Event("load"));
+      }
+    }
+  );
+  const drawImage = vi.fn();
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+    drawImage,
+  } as unknown as CanvasRenderingContext2D);
+  return drawImage;
+}
+
+const photoSources = [
+  ["Gallery", "Choose a Memory from Gallery"],
+  ["Camera", "Take a Memory with Camera"],
+] as const;
+
 describe("City Memories", () => {
   it("shows the one Memory read from a legacy City", async () => {
     renderApp({
@@ -37,30 +63,115 @@ describe("City Memories", () => {
     expect(await screen.findAllByRole("button", { name: /View Memory/ })).toHaveLength(1);
   });
 
-  it("adds a Memory to the grid", async () => {
-    vi.stubGlobal(
-      "Image",
-      class {
-        width = 1600;
-        height = 1200;
-        onload: ((event: Event) => void) | null = null;
-        onerror: ((event: Event) => void) | null = null;
+  it("offers exactly Gallery and Camera as photo-source actions", async () => {
+    const { user } = renderCity();
+    const addMemoryButton = await screen.findByRole("button", { name: "Add a Memory" });
+    await user.click(addMemoryButton);
 
-        set src(_value: string) {
-          this.onload?.(new Event("load"));
-        }
-      }
+    const sheet = screen.getByRole("dialog", { name: "Add a Memory" });
+    expect(
+      within(sheet)
+        .getAllByRole("button")
+        .map((button) => button.textContent?.trim())
+        .filter((name) => name === "Gallery" || name === "Camera")
+    ).toEqual(["Gallery", "Camera"]);
+
+    expect(screen.getByLabelText("Choose a Memory from Gallery")).not.toHaveAttribute(
+      "capture"
     );
-    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
-      drawImage: vi.fn(),
-    } as unknown as CanvasRenderingContext2D);
-    vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((callback) => {
-      callback(new Blob(["memory"], { type: "image/jpeg" }));
-    });
+    expect(screen.getByLabelText("Take a Memory with Camera")).toHaveAttribute(
+      "capture",
+      "environment"
+    );
+  });
+
+  it.each(photoSources)("resizes a selected %s Memory before saving", async (source, inputLabel) => {
+    const drawImage = mockImageResize();
+    const toBlob = vi
+      .spyOn(HTMLCanvasElement.prototype, "toBlob")
+      .mockImplementation((callback, type, quality) => {
+        expect(type).toBe("image/jpeg");
+        expect(quality).toBe(0.75);
+        callback(new Blob(["memory"], { type: "image/jpeg" }));
+      });
 
     const { user } = renderCity();
-    const input = await screen.findByLabelText("Add a Memory");
+    const addMemoryButton = await screen.findByRole("button", { name: "Add a Memory" });
+    await user.click(addMemoryButton);
+    await user.click(screen.getByRole("button", { name: source }));
+
+    const input = screen.getByLabelText(inputLabel);
     await user.upload(input, new File(["memory"], "memory.jpg", { type: "image/jpeg" }));
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: /View Memory/ })).toHaveLength(2);
+    });
+    expect(drawImage).toHaveBeenCalledWith(expect.any(Image), 0, 0, 800, 600);
+    expect(toBlob).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(addMemoryButton).toHaveFocus());
+  });
+
+  it("dismisses the source sheet with Escape or its backdrop and returns focus", async () => {
+    const { user } = renderCity();
+    const addMemoryButton = await screen.findByRole("button", { name: "Add a Memory" });
+    await user.click(addMemoryButton);
+
+    expect(screen.getByRole("button", { name: "Gallery" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Camera" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Close photo source options" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Gallery" })).toHaveFocus();
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => expect(addMemoryButton).toHaveFocus());
+    expect(screen.queryByRole("dialog", { name: "Add a Memory" })).not.toBeInTheDocument();
+
+    await user.click(addMemoryButton);
+    fireEvent.mouseDown(screen.getByRole("dialog", { name: "Add a Memory" }));
+    await waitFor(() => expect(addMemoryButton).toHaveFocus());
+  });
+
+  it("returns focus without saving when the native chooser is cancelled", async () => {
+    const { user } = renderCity();
+    const addMemoryButton = await screen.findByRole("button", { name: "Add a Memory" });
+    await user.click(addMemoryButton);
+    await user.click(screen.getByRole("button", { name: "Gallery" }));
+
+    fireEvent(
+      screen.getByLabelText("Choose a Memory from Gallery"),
+      new Event("cancel", { bubbles: true })
+    );
+
+    expect(screen.getAllByRole("button", { name: /View Memory/ })).toHaveLength(1);
+    await waitFor(() => expect(addMemoryButton).toHaveFocus());
+  });
+
+  it("shows resize failures without saving and lets the Account retry", async () => {
+    mockImageResize();
+    vi.spyOn(HTMLCanvasElement.prototype, "toBlob")
+      .mockImplementationOnce((callback) => callback(null))
+      .mockImplementationOnce((callback) =>
+        callback(new Blob(["memory"], { type: "image/jpeg" }))
+      );
+
+    const { user } = renderCity();
+    const galleryInput = await screen.findByLabelText("Choose a Memory from Gallery");
+
+    await user.click(screen.getByRole("button", { name: "Add a Memory" }));
+    await user.click(screen.getByRole("button", { name: "Gallery" }));
+    await user.upload(galleryInput, new File(["memory"], "memory.jpg", { type: "image/jpeg" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Couldn't add that Memory. Please try again."
+    );
+    expect(screen.getAllByRole("button", { name: /View Memory/ })).toHaveLength(1);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Add a Memory" })).toHaveFocus());
+
+    await user.click(screen.getByRole("button", { name: "Add a Memory" }));
+    await user.click(screen.getByRole("button", { name: "Gallery" }));
+    await user.upload(galleryInput, new File(["memory"], "memory.jpg", { type: "image/jpeg" }));
 
     await waitFor(() => {
       expect(screen.getAllByRole("button", { name: /View Memory/ })).toHaveLength(2);
@@ -152,9 +263,13 @@ describe("City Memories", () => {
     expect(screen.getByRole("button", { name: "View Memory 1" })).toBeVisible();
   });
 
-  it("shows an error for a non-image file without adding a Memory", async () => {
-    renderCity();
-    const input = await screen.findByLabelText("Add a Memory");
+  it("returns focus after rejecting a non-image file without saving", async () => {
+    const { user } = renderCity();
+    const addMemoryButton = await screen.findByRole("button", { name: "Add a Memory" });
+    const input = await screen.findByLabelText("Choose a Memory from Gallery");
+
+    await user.click(addMemoryButton);
+    await user.click(screen.getByRole("button", { name: "Gallery" }));
 
     fireEvent.change(input, {
       target: { files: [new File(["text"], "notes.txt", { type: "text/plain" })] },
@@ -164,5 +279,6 @@ describe("City Memories", () => {
       "Choose an image file for this Memory."
     );
     expect(screen.getAllByRole("button", { name: /View Memory/ })).toHaveLength(1);
+    await waitFor(() => expect(addMemoryButton).toHaveFocus());
   });
 });
