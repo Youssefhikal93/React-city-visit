@@ -1,15 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { createPortal } from "react-dom";
 
+import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 interface PhotoSourceSheetProps {
   disabled: boolean;
   onChooseCamera: () => void;
   onChooseGallery: () => void;
   onDismiss: () => void;
 }
-
-const focusableSelector =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 function PhotoSourceSheet({
   disabled,
@@ -19,39 +17,11 @@ function PhotoSourceSheet({
 }: PhotoSourceSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const sheet = sheetRef.current;
-    const focusableElements = () =>
-      Array.from(sheet?.querySelectorAll<HTMLElement>(focusableSelector) ?? []);
-
-    sheet?.querySelector<HTMLElement>("[data-photo-source]")?.focus();
-
-    function trapFocus(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onDismiss();
-        return;
-      }
-
-      if (event.key !== "Tab") return;
-
-      const elements = focusableElements();
-      const firstElement = elements[0];
-      const lastElement = elements.at(-1);
-      if (!firstElement || !lastElement) return;
-
-      if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
-    }
-
-    window.addEventListener("keydown", trapFocus);
-    return () => window.removeEventListener("keydown", trapFocus);
-  }, [onDismiss]);
+  useDialogFocusTrap({
+    dialogRef: sheetRef,
+    initialFocusSelector: "[data-photo-source]",
+    onDismiss,
+  });
 
   return createPortal(
     <div

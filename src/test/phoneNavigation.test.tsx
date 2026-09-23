@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 
@@ -40,6 +40,12 @@ describe("the menu", () => {
     expect(menu.getByRole("link", { name: /cities/i })).toBeVisible();
     expect(menu.getByRole("link", { name: /home/i })).toBeVisible();
     expect(menu.getByRole("button", { name: /sign out/i })).toBeVisible();
+    expect(
+      menu.queryByRole("combobox", { name: "Home Country" }),
+    ).not.toBeInTheDocument();
+    expect(
+      menu.queryByRole("combobox", { name: "Planned destination" }),
+    ).not.toBeInTheDocument();
   });
 
   it("closes on Escape", async () => {
@@ -59,6 +65,51 @@ describe("the menu", () => {
     expect(
       screen.queryByRole("button", { name: /open menu/i })
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("Country preferences in the phone navigation", () => {
+  it("opens Home Country, saves a choice, and keeps the current route", async () => {
+    const { user } = renderApp({ route: "/app/countries", viewport: "phone" });
+    const views = screen.getByRole("navigation", { name: "Views" });
+    const homeButton = within(views).getByRole("button", {
+      name: "Home Country",
+    });
+
+    await user.click(homeButton);
+    const homeDialog = screen.getByRole("dialog", { name: "Home Country" });
+    const homeSelector = within(homeDialog).getByRole("combobox", {
+      name: "Home Country",
+    });
+    expect(screen.getByTestId("current-location")).toHaveTextContent(
+      "/app/countries",
+    );
+
+    await user.selectOptions(homeSelector, "se");
+    expect(homeSelector).toHaveValue("se");
+  });
+
+  it("opens Planned destination and returns focus to its trigger after dismissal", async () => {
+    const { user } = renderApp({ route: "/app/countries", viewport: "phone" });
+    const views = screen.getByRole("navigation", { name: "Views" });
+    const destinationButton = within(views).getByRole("button", {
+      name: "Planned destination",
+    });
+
+    await user.click(destinationButton);
+    expect(
+      within(
+        screen.getByRole("dialog", { name: "Planned destination" }),
+      ).getByRole("combobox", { name: "Planned destination" }),
+    ).toBeVisible();
+    await user.keyboard("{Escape}");
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Planned destination" }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(destinationButton).toHaveFocus();
   });
 });
 
