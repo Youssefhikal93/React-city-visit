@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 interface PhotoSourceSheetProps {
   disabled: boolean;
@@ -52,19 +53,19 @@ function PhotoSourceSheet({
     return () => window.removeEventListener("keydown", trapFocus);
   }, [onDismiss]);
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="photo-source-heading"
-      className="fixed inset-0 z-[1000] flex items-end bg-dark-0/70 p-3 sm:items-center sm:justify-center"
+      className="fixed inset-0 z-[1200] flex items-end bg-dark-0/70 p-3 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:items-center sm:justify-center sm:p-6"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onDismiss();
       }}
     >
       <div
         ref={sheetRef}
-        className="w-full rounded-2xl border border-dark-2 bg-dark-1 p-5 shadow-2xl sm:max-w-md sm:p-6"
+        className="max-h-full w-full overflow-y-auto rounded-2xl border border-dark-2 bg-dark-1 p-5 shadow-2xl sm:max-w-md sm:p-6"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -104,7 +105,8 @@ function PhotoSourceSheet({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
