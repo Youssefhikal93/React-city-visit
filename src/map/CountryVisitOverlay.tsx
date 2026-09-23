@@ -1,7 +1,7 @@
 import { GeoJSON } from "react-leaflet";
 
 import {
-  countryPreferenceBoundaries,
+  countryListBoundaries,
   visitedCountryBoundaries,
 } from "./countryBoundaries";
 import type { City } from "../types";
@@ -14,7 +14,7 @@ const visitedCountryStyle = {
   weight: 1,
 };
 
-const homeCountryStyle = {
+const livedInCountryStyle = {
   color: "#d97706",
   fillColor: "#fbbf24",
   fillOpacity: 0.58,
@@ -30,59 +30,52 @@ const plannedCountryStyle = {
   weight: 1.5,
 };
 
-function boundaryKey(
-  cities: City[],
-  homeCountryCode: string | null,
-  plannedCountryCode: string | null,
-): string {
-  return cities
-    .map((city) => `${city.id}:${city.emoji}`)
-    .sort()
-    .concat(homeCountryCode ?? "", plannedCountryCode ?? "")
-    .join("|");
+function codesKey(countryCodes: Iterable<string>): string {
+  return [...countryCodes].sort().join(",") || "none";
 }
 
 /**
- * Uses its own Leaflet layer so city updates replace the filtered geometry.
- * The layer is deliberately non-interactive: taps, markers, and map Search
- * continue to target the map below it.
+ * Uses its own Leaflet layers so list and city updates replace the filtered
+ * geometry. Each Country is drawn once, with lived in taking precedence over
+ * planned, and planned over visited. The layers are deliberately
+ * non-interactive: taps, markers, and map Search continue to target the map
+ * below them.
  */
 export function CountryVisitOverlay({
   cities,
-  homeCountryCode,
-  plannedCountryCode,
+  livedInCountryCodes,
+  plannedCountryCodes,
 }: {
   cities: City[];
-  homeCountryCode: string | null;
-  plannedCountryCode: string | null;
+  livedInCountryCodes: string[];
+  plannedCountryCodes: string[];
 }) {
-  const excludedCountryCodes = new Set(
-    [homeCountryCode, plannedCountryCode].filter(
-      (countryCode): countryCode is string => countryCode !== null,
-    ),
-  );
+  const livedIn = new Set(livedInCountryCodes);
+  const plannedOrLivedIn = new Set([...livedInCountryCodes, ...plannedCountryCodes]);
+  const visitedKey = cities
+    .map((city) => `${city.id}:${city.emoji}`)
+    .sort()
+    .join("|");
 
   return (
     <>
       <GeoJSON
-        data={visitedCountryBoundaries(cities, excludedCountryCodes)}
+        data={visitedCountryBoundaries(cities, plannedOrLivedIn)}
         interactive={false}
-        key={`visited-${boundaryKey(cities, homeCountryCode, plannedCountryCode)}`}
+        key={`visited-${visitedKey}-${codesKey(plannedOrLivedIn)}`}
         style={visitedCountryStyle}
       />
       <GeoJSON
-        data={countryPreferenceBoundaries(
-          plannedCountryCode === homeCountryCode ? null : homeCountryCode,
-        )}
+        data={countryListBoundaries(plannedCountryCodes, livedIn)}
         interactive={false}
-        key={`home-${plannedCountryCode === homeCountryCode ? "none" : (homeCountryCode ?? "none")}`}
-        style={homeCountryStyle}
+        key={`planned-${codesKey(plannedCountryCodes)}-${codesKey(livedIn)}`}
+        style={plannedCountryStyle}
       />
       <GeoJSON
-        data={countryPreferenceBoundaries(plannedCountryCode)}
+        data={countryListBoundaries(livedInCountryCodes)}
         interactive={false}
-        key={`planned-${plannedCountryCode ?? "none"}`}
-        style={plannedCountryStyle}
+        key={`lived-in-${codesKey(livedIn)}`}
+        style={livedInCountryStyle}
       />
     </>
   );
@@ -97,23 +90,23 @@ export function CountryVisitLegend() {
       <span className="flex items-center gap-2">
         <span
           aria-hidden="true"
-          className="h-3 w-3 rounded-sm border border-[#0f604d] bg-[#22c29b]/50"
+          className="h-3 w-3 rounded-sm border border-[#d97706] bg-[#fbbf24]/60"
         />
-        Visited Country
+        Lived in
       </span>
       <span className="mt-1 flex items-center gap-2">
         <span
           aria-hidden="true"
-          className="h-3 w-3 rounded-sm border border-[#d97706] bg-[#fbbf24]/60"
+          className="h-3 w-3 rounded-sm border border-[#0f604d] bg-[#22c29b]/50"
         />
-        Home Country
+        Visited
       </span>
       <span className="mt-1 flex items-center gap-2">
         <span
           aria-hidden="true"
           className="h-3 w-3 rounded-sm border border-[#6d28d9] bg-[#a78bfa]/60"
         />
-        Planned destination
+        Planned
       </span>
     </aside>
   );

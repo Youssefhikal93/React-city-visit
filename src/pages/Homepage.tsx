@@ -83,10 +83,16 @@
 //     </main>
 //   );
 // }
-import { Link, NavLink } from "react-router-dom";
+import { Link, Navigate, NavLink } from "react-router-dom";
 import PageNav from "../components/PageNav";
+import { useAuth } from "../context/AuthContext";
 
 export default function Homepage() {
+  const { isAuthenticated } = useAuth();
+
+  // A signed-in Account's Home is its dashboard inside the app.
+  if (isAuthenticated) return <Navigate replace to="/app/home" />;
+
   return (
     <main className="min-h-screen w-full bg-cover bg-center bg-no-repeat bg-[url('/bg.jpg')] font-manrope">
       <div className="bg-dark-0/80 min-h-screen w-full flex flex-col">
@@ -140,6 +146,7 @@ export default function Homepage() {
                 </svg>
               </NavLink>
             </li>
+            {/* Product and Pricing are hidden for now.
             <li>
               <NavLink
                 to={"/product"}
@@ -185,6 +192,7 @@ export default function Homepage() {
                 </svg>
               </NavLink>
             </li>
+            */}
           </ul>
         </div>
       </div>

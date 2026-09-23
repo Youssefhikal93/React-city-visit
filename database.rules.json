@@ -30,11 +30,23 @@
           ".read": "auth != null && root.child('sessions/' + auth.uid + '/username').val() === $username",
           ".write": "auth != null && root.child('sessions/' + auth.uid + '/username').val() === $username",
 
+          // Each list is a set of lowercase two-letter Country codes.
+          "livedInCountries": {
+            "$countryCode": {
+              ".validate": "$countryCode.matches(/^[a-z]{2}$/) && newData.val() === true"
+            }
+          },
+          "plannedCountries": {
+            "$countryCode": {
+              ".validate": "$countryCode.matches(/^[a-z]{2}$/) && newData.val() === true"
+            }
+          },
+          // Legacy single values: the app moves them into the lists, then deletes them.
           "homeCountry": {
-            ".validate": "!newData.exists() || (newData.isString() && newData.val().matches(/^[a-z]{2}$/))"
+            ".validate": "!newData.exists()"
           },
           "plannedCountry": {
-            ".validate": "!newData.exists() || (newData.isString() && newData.val().matches(/^[a-z]{2}$/))"
+            ".validate": "!newData.exists()"
           },
           "$other": { ".validate": false }
         },

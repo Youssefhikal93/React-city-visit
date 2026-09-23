@@ -13,7 +13,12 @@ One visited place an Account has pinned: a name, a Country, a visit date, option
 _Avoid_: Pin, marker, place, location, visit
 
 **Country**:
-A grouping of an Account's Cities by the nation they sit in, shown with its flag. A visited Country is derived from Cities; never created directly. An Account may separately select one private home Country and one private planned destination Country; neither creates a City or counts as visited.
+A nation, shown with its flag. A **visited** Country is derived from an Account's Cities and never created directly. Separately, an Account keeps two private lists of any number of Countries:
+- **Lived in**: Countries it called home. They count toward the Countries it has been to, with or without a City there, and a lived-in Country with Cities appears as both lived in and visited.
+- **Planned**: Countries it wants to visit. They don't count as been to. A planned Country leaves the list automatically when the Account adds a City in it.
+
+On the map a Country is coloured once, with lived in taking precedence over planned, and planned over visited.
+_Avoid_: Home Country, destination (for the lists)
 
 **Memory**:
 One photo attached to a City. A City has zero to five Memories; a Memory has no text of its own.
@@ -25,8 +30,12 @@ _Avoid_: Coordinates, location, lat/lng
 
 ## Map
 
+**Home**:
+The signed-in Account's dashboard and where it lands after signing in: its totals (Cities, Countries been to, visits, planned Countries), next destinations, and most recent Cities.
+_Avoid_: Landing page (that is the signed-out hero page)
+
 **Map view** / **List view**:
-On a phone the app shows one at a time: the map, or the sidebar content (Cities, Countries, City detail, Add City form). A bottom bar switches between them. On wider screens both are shown side by side.
+On a phone the app shows one at a time: the map, or the sidebar content (Home, Cities, Countries, City detail, Add City form). A bottom bar switches between Home, Map, Cities, and Countries. On wider screens both are shown side by side.
 
 **Search**:
 The box on the map that finds a City the Account already saved, or any place on Earth by name, and flies the map there.

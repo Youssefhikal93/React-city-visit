@@ -24,6 +24,7 @@ function PageNav() {
             Home
           </NavLink>
         </li>
+        {/* Product and Pricing are hidden for now.
         <li className="hidden md:block">
           <NavLink
             to={"/product"}
@@ -48,6 +49,7 @@ function PageNav() {
             Pricing
           </NavLink>
         </li>
+        */}
         <li>
           <NavLink
             to={"/login"}
