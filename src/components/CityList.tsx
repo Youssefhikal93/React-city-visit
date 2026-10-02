@@ -3,6 +3,7 @@ import Spinner from "./Spinner";
 import CityItem from "./CityItem";
 import Message from "./Message";
 import { useCities } from "../context/CitiesContext";
+import { byMostRecentVisit } from "../services/visitDate";
 
 function CityList() {
   const { cities, isLoading, error } = useCities();
@@ -20,7 +21,7 @@ function CityList() {
         <p>Your places, your stories, your way back.</p>
       </header>
       <ul className="city-list">
-        {cities.map((city) => (
+        {[...cities].sort(byMostRecentVisit).map((city) => (
           <CityItem city={city} key={city.id} />
         ))}
       </ul>

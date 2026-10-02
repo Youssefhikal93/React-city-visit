@@ -13,19 +13,9 @@ import { useCountryLists } from "../context/CountryListsContext";
 import { useIsPhone } from "../hooks/useIsPhone";
 import { beenToCountryCodes, countryName } from "../map/countries";
 import { cityDetailTarget } from "../map/mapBehaviour";
-import { formatVisitDate } from "../services/visitDate";
-import type { City } from "../types";
+import { byMostRecentVisit, formatVisitDate } from "../services/visitDate";
 
 const RECENT_CITY_COUNT = 3;
-
-function byMostRecentVisit(first: City, second: City): number {
-  if (first.date !== second.date) {
-    if (!first.date) return 1;
-    if (!second.date) return -1;
-    return second.date.localeCompare(first.date);
-  }
-  return second.createdAt - first.createdAt;
-}
 
 function Dashboard() {
   const isPhone = useIsPhone();
