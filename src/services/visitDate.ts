@@ -1,4 +1,4 @@
-import type { VisitDatePrecision } from "../types";
+import type { City, VisitDatePrecision } from "../types";
 
 function monthStart(date: Date | string): Date {
   if (date instanceof Date)
@@ -42,6 +42,16 @@ export function visitDateForPicker(
 
 export function isValidVisitDate(date: Date | null): date is Date {
   return date !== null && !Number.isNaN(date.getTime());
+}
+
+/** Newest visit first; undated cities last, ties broken by newest added. */
+export function byMostRecentVisit(first: City, second: City): number {
+  if (first.date !== second.date) {
+    if (!first.date) return 1;
+    if (!second.date) return -1;
+    return second.date.localeCompare(first.date);
+  }
+  return second.createdAt - first.createdAt;
 }
 
 export function formatVisitDate(
